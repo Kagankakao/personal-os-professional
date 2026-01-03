@@ -1,0 +1,12 @@
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\AchievementsControl.Designer.cs(26,38): error CS1061: 'TileControl' does not contain a definition for 'AllowSelection' and no accessible extension method 'AllowSelection' accepting a first argument of type 'TileControl' could be found (are you missing a using directive or an assembly reference?) [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\AnalyticsControl.cs(46,58): error CS1061: 'IAnalyticsService' does not contain a definition for 'GetTotalFocusTimeAsync' and no accessible extension method 'GetTotalFocusTimeAsync' accepting a first argument of type 'IAnalyticsService' could be found (are you missing a using directive or an assembly reference?) [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\AnalyticsControl.cs(47,61): error CS1061: 'IAnalyticsService' does not contain a definition for 'GetTotalSessionsAsync' and no accessible extension method 'GetTotalSessionsAsync' accepting a first argument of type 'IAnalyticsService' could be found (are you missing a using directive or an assembly reference?) [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\AnalyticsControl.cs(59,55): error CS1061: 'IAnalyticsService' does not contain a definition for 'GetWeeklyReportAsync' and no accessible extension method 'GetWeeklyReportAsync' accepting a first argument of type 'IAnalyticsService' could be found (are you missing a using directive or an assembly reference?) [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+
+Build FAILED.
+    13 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:01.58
+
+Workload updates are available. Run `dotnet workload list` for more information.

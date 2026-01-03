@@ -1,0 +1,9 @@
+CSC : error CS1705: Assembly 'Serilog.Extensions.Hosting' with identity 'Serilog.Extensions.Hosting, Version=9.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10' uses 'Serilog, Version=4.2.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10' which has a higher version than referenced assembly 'Serilog' with identity 'Serilog, Version=4.1.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10' [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+
+Build FAILED.
+    114 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.33
+
+Workload updates are available. Run `dotnet workload list` for more information.

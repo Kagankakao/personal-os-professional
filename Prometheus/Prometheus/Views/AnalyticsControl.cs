@@ -1,0 +1,90 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using DevExpress.XtraEditors;
+using KeganOS.Core.Interfaces;
+using KeganOS.Core.Models;
+using Serilog;
+using DevExpress.XtraCharts;
+
+namespace KeganOS.Views
+{
+    public partial class AnalyticsControl : XtraUserControl
+    {
+        private readonly IAnalyticsService _analyticsService;
+        private readonly IUserService _userService;
+        private readonly ILogger _logger = Log.ForContext<AnalyticsControl>();
+
+        public AnalyticsControl(IAnalyticsService analyticsService, IUserService userService)
+        {
+            _analyticsService = analyticsService;
+            _userService = userService;
+            InitializeComponent();
+        }
+
+        protected override async void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            if (DesignMode) return;
+            await LoadDataAsync();
+        }
+
+        private async Task LoadDataAsync()
+        {
+            try
+            {
+                var user = await _userService.GetCurrentUserAsync();
+                if (user == null) return;
+
+                // 1. Summary Stats
+                lblTotalHours.Text = $"Total Focus: {user.TotalHours:F1} hours";
+                
+                var streak = await _analyticsService.CalculateCurrentStreakAsync(user);
+                lblTotalSessions.Text = $"Current Streak: {streak} days";
+                
+                lblAverageSession.Text = $"Best Streak: {user.BestStreak} days";
+
+                // 2. Weekly Chart
+                DateTime monday = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek + (int)DayOfWeek.Monday);
+                var weeklyData = await _analyticsService.GetWeeklyDataAsync(user, monday);
+                
+                chartWeeklyProgress.Series.Clear();
+                Series series = new Series("Focus Evolution", ViewType.Bar);
+                
+                foreach (var kvp in weeklyData.OrderBy(x => x.Key))
+                {
+                    series.Points.Add(new SeriesPoint(kvp.Key.ToString(), kvp.Value));
+                }
+
+                chartWeeklyProgress.Series.Add(series);
+
+                // Styling
+                if (series.View is AreaSeriesView view)
+                {
+                    view.Transparency = 150;
+                    view.Color = Color.FromArgb(135, 206, 235);
+                    view.Border.Visibility = DevExpress.Utils.DefaultBoolean.True;
+                }
+
+                chartWeeklyProgress.Legend.Visibility = DevExpress.Utils.DefaultBoolean.False;
+                XYDiagram diagram = chartWeeklyProgress.Diagram as XYDiagram;
+                if (diagram != null)
+                {
+                    diagram.AxisY.Title.Text = "Hours";
+                    diagram.AxisY.Title.Visibility = DevExpress.Utils.DefaultBoolean.True;
+                    diagram.AxisX.Label.Angle = -45;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to load analytics data");
+            }
+        }
+    }
+}

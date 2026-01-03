@@ -1,0 +1,100 @@
+using KeganOS.Core.Interfaces;
+using Mscc.GenerativeAI;
+using Serilog;
+using AppChatMessage = KeganOS.Core.Interfaces.ChatMessage;
+
+namespace KeganOS.Infrastructure.Services;
+
+public class GeminiProvider : IAIProvider, IDisposable
+{
+    private readonly ILogger _logger = Log.ForContext<GeminiProvider>();
+    private GoogleAI? _googleAI;
+    private GenerativeModel? _model;
+    private string? _apiKey;
+    private bool _disposed;
+
+    public bool IsAvailable => !string.IsNullOrEmpty(_apiKey) && _model != null;
+
+    public void Configure(string apiKey)
+    {
+        if (string.IsNullOrEmpty(apiKey)) return;
+        try
+        {
+            _apiKey = apiKey;
+            _googleAI = new GoogleAI(apiKey);
+            _model = _googleAI.GenerativeModel("gemini-3-flash-preview");
+            _logger.Information("Gemini AI configured with gemini-3-flash-preview");
+        }
+        catch (Exception ex) { _logger.Error(ex, "Failed to configure Gemini"); }
+    }
+
+    private void CheckDisposed()
+    {
+        if (_disposed) throw new ObjectDisposedException(nameof(GeminiProvider));
+    }
+
+    public async Task<string> GenerateResponseAsync(string prompt, IEnumerable<AppChatMessage>? history = null)
+    {
+        CheckDisposed();
+        if (!IsAvailable) return "AI not configured. Add API key in settings.";
+        try
+        {
+            var response = await _model!.GenerateContent(prompt);
+            return response.Text ?? "No response";
+        }
+        catch (Exception ex) { return $"Error: {ex.Message}"; }
+    }
+
+    public async IAsyncEnumerable<string> GenerateResponseStreamingAsync(string prompt)
+    {
+        CheckDisposed();
+        if (!IsAvailable)
+        {
+            yield return "AI not configured. Add API key in settings.";
+            yield break;
+        }
+        
+        // Use GenerateContentStream for streaming
+        var streamResponse = _model!.GenerateContentStream(prompt);
+        
+        await foreach (var chunk in streamResponse)
+        {
+            if (!string.IsNullOrEmpty(chunk.Text))
+            {
+                yield return chunk.Text;
+            }
+        }
+    }
+
+    public Task<float[]> GenerateEmbeddingAsync(string text)
+    {
+        CheckDisposed();
+        return Task.FromResult(Array.Empty<float>());
+    }
+
+    public async Task<string> InterpretQuoteAsync(string quote, string context)
+    {
+        CheckDisposed();
+        if (!IsAvailable) return quote;
+        try
+        {
+            var response = await _model!.GenerateContent($"Interpret: {quote}");
+            return response.Text ?? quote;
+        }
+        catch { return quote; }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        
+        _disposed = true;
+        
+        // Internal clean up if needed
+        _googleAI = null;
+        _model = null;
+        
+        _logger.Debug("GeminiProvider disposed");
+        GC.SuppressFinalize(this);
+    }
+}
