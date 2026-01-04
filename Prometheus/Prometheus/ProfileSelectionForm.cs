@@ -8,17 +8,20 @@ using DevExpress.XtraEditors;
 using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KeganOS
 {
     public partial class ProfileSelectionForm : XtraForm
     {
         private readonly IUserService _userService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger = Log.ForContext<ProfileSelectionForm>();
         
-        public ProfileSelectionForm(IUserService userService)
+        public ProfileSelectionForm(IUserService userService, IServiceProvider serviceProvider)
         {
             _userService = userService;
+            _serviceProvider = serviceProvider;
             InitializeComponent();
         }
 
@@ -31,6 +34,13 @@ namespace KeganOS
             {
                 var users = await _userService.GetAllUsersAsync();
                 DisplayUsers(users);
+                
+                // If NO users exist, automatically trigger profile creation
+                if (!users.Any())
+                {
+                    _logger.Information("No users found, triggering profile creation");
+                    CreateNewProfile();
+                }
             }
             catch (Exception ex)
             {
@@ -52,7 +62,17 @@ namespace KeganOS
                 item.Appearance.ForeColor = Color.White;
                 item.ItemSize = TileItemSize.Medium;
                 
-                // Image handling would go here
+                if (user.HasAvatar)
+                {
+                    try
+                    {
+                        item.Image = Image.FromFile(user.AvatarPath);
+                        item.ImageAlignment = TileItemContentAlignment.MiddleCenter;
+                        item.ImageToTextAlignment = TileControlImageToTextAlignment.Top;
+                        item.ImageScaleMode = TileItemImageScaleMode.ZoomOutside;
+                    }
+                    catch { /* Ignore image load errors */ }
+                }
                 
                 tileControl1.Groups[0].Items.Add(item);
             }
@@ -60,7 +80,7 @@ namespace KeganOS
             // Add "Create New" item
             var newItem = new TileItem();
             newItem.Text = "+ New Profile";
-            newItem.Appearance.BackColor = Color.DarkRed;
+            newItem.Appearance.BackColor = Color.FromArgb(0, 150, 136);
             newItem.ItemSize = TileItemSize.Medium;
             newItem.Tag = "NEW";
             tileControl1.Groups[0].Items.Add(newItem);
@@ -83,14 +103,24 @@ namespace KeganOS
 
         private async void CreateNewProfile()
         {
-            // Simple prompt for now
-            string name = XtraInputBox.Show("Enter Profile Name:", "New Profile", "");
-            if (!string.IsNullOrEmpty(name))
+            using (var scope = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.CreateScope(_serviceProvider))
             {
-                var user = new User { DisplayName = name, JournalFileName = $"{name}_Journal.txt" };
-                await _userService.CreateUserAsync(user);
-                var users = await _userService.GetAllUsersAsync();
-                DisplayUsers(users);
+                var createForm = scope.ServiceProvider.GetRequiredService<CreateProfileForm>();
+                if (createForm.ShowDialog() == DialogResult.OK && createForm.CreatedUser != null)
+                {
+                    await _userService.CreateUserAsync(createForm.CreatedUser);
+                    var users = await _userService.GetAllUsersAsync();
+                    DisplayUsers(users);
+                    
+                    // If this was the first user, select them automatically
+                    if (users.Count() == 1)
+                    {
+                        var firstUser = users.First();
+                        await _userService.SetLastActiveUserIdAsync(firstUser.Id);
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                }
             }
         }
     }

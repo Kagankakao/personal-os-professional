@@ -24,6 +24,7 @@ partial class DashboardControl
         this.btnStart = new DevExpress.XtraEditors.SimpleButton();
         this.lblTimerDisplay = new DevExpress.XtraEditors.LabelControl();
         this.pnlStats = new DevExpress.XtraEditors.GroupControl();
+        this.picPixelaHeatmap = new DevExpress.XtraEditors.PictureEdit();
         this.lblBestValue = new DevExpress.XtraEditors.LabelControl();
         this.lblBest = new DevExpress.XtraEditors.LabelControl();
         this.lblStreakValue = new DevExpress.XtraEditors.LabelControl();
@@ -49,6 +50,7 @@ partial class DashboardControl
         this.pnlTimer.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)(this.pnlStats)).BeginInit();
         this.pnlStats.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)(this.picPixelaHeatmap.Properties)).BeginInit();
         ((System.ComponentModel.ISupportInitialize)(this.progressXP.Properties)).BeginInit();
         this.SuspendLayout();
         // 
@@ -162,6 +164,7 @@ partial class DashboardControl
         this.pnlStats.Size = new System.Drawing.Size(490, 500);
         this.pnlStats.TabIndex = 0;
         this.pnlStats.Text = "📊 Your Stats";
+        this.pnlStats.Controls.Add(this.picPixelaHeatmap);
         this.pnlStats.Controls.Add(this.lblBestValue);
         this.pnlStats.Controls.Add(this.lblBest);
         this.pnlStats.Controls.Add(this.lblStreakValue);
@@ -300,6 +303,16 @@ partial class DashboardControl
         this.lblBestValue.TabIndex = 11;
         this.lblBestValue.Text = "0 days";
         // 
+        // picPixelaHeatmap
+        // 
+        this.picPixelaHeatmap.Location = new System.Drawing.Point(30, 310);
+        this.picPixelaHeatmap.Name = "picPixelaHeatmap";
+        this.picPixelaHeatmap.Properties.ShowCameraMenuItem = DevExpress.XtraEditors.Controls.CameraMenuItemVisibility.Auto;
+        this.picPixelaHeatmap.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Zoom;
+        this.picPixelaHeatmap.Size = new System.Drawing.Size(400, 160);
+        this.picPixelaHeatmap.TabIndex = 12;
+        this.picPixelaHeatmap.ToolTip = "Pixe.la Heatmap";
+        // 
         // DashboardControl
         // 
         this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -308,7 +321,7 @@ partial class DashboardControl
         this.Controls.Add(this.pnlMotivation);
         this.Name = "DashboardControl";
         this.Padding = new System.Windows.Forms.Padding(15);
-        this.Size = new System.Drawing.Size(980, 580);
+        this.Size = new System.Drawing.Size(980, 620);
         ((System.ComponentModel.ISupportInitialize)(this.pnlMotivation)).EndInit();
         this.pnlMotivation.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)(this.splitMain.Panel1)).EndInit();
@@ -335,6 +348,7 @@ partial class DashboardControl
     private DevExpress.XtraEditors.SimpleButton btnCustomize;
     private DevExpress.XtraEditors.SimpleButton btnLaunchKegomoDoro;
     private DevExpress.XtraEditors.GroupControl pnlStats;
+    private DevExpress.XtraEditors.PictureEdit picPixelaHeatmap;
     private DevExpress.XtraEditors.LabelControl lblToday;
     private DevExpress.XtraEditors.LabelControl lblTodayValue;
     private DevExpress.XtraEditors.LabelControl lblWeek;

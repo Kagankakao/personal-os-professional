@@ -380,7 +380,9 @@ public class PixelaService : IPixelaService, IDisposable
     public async Task<bool> EnablePngAsync(User user)
     {
         if (!IsConfigured(user)) return false;
-        var (success, _) = await UpdateGraphAsync(user, isEnablePng: true);
+        // Pixe.la requires at least one of name, unit, color, etc. for PUT. 
+        // We include unit: "hours" as a safe default.
+        var (success, _) = await UpdateGraphAsync(user, isEnablePng: true, unit: "hours");
         return success;
     }
 

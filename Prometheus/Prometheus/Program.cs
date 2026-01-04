@@ -21,7 +21,7 @@ static class Program
     private static IHost? _host;
 
     [STAThread]
-    static async Task Main()
+    static void Main()
     {
         // 1. Initialize Logging
         Log.Logger = new LoggerConfiguration()
@@ -47,7 +47,7 @@ static class Program
             })
             .Build();
 
-        await _host.StartAsync();
+        _host.StartAsync().GetAwaiter().GetResult();
 
         // 4. Launch Application Flow
         try
@@ -75,7 +75,7 @@ static class Program
         }
         finally
         {
-            await _host.StopAsync();
+            _host.StopAsync().GetAwaiter().GetResult();
             _host.Dispose();
             Log.CloseAndFlush();
         }
@@ -104,6 +104,7 @@ static class Program
         // Forms & Views
         services.AddTransient<MainDashboardForm>();
         services.AddTransient<ProfileSelectionForm>();
+        services.AddTransient<CreateProfileForm>();
         services.AddTransient<DashboardControl>();
         services.AddTransient<ChatControl>();
         services.AddTransient<NotesControl>();
