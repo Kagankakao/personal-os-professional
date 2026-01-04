@@ -23,6 +23,34 @@ namespace KeganOS.Views
             _pixelaService = pixelaService;
             _analyticsService = analyticsService;
             InitializeComponent();
+
+            // Setup simple button hover effects
+            SetupButton(btnStart, System.Drawing.Color.FromArgb(76, 175, 80)); // Green
+            SetupButton(btnCustomize, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
+            SetupButton(btnLaunchKegomoDoro, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
+
+            // Setup heatmap cursor and click
+            picPixelaHeatmap.Cursor = System.Windows.Forms.Cursors.Hand;
+            picPixelaHeatmap.Click += async (s, e) => 
+            {
+                var currentUser = await _userService.GetCurrentUserAsync();
+                if (currentUser is not null && !string.IsNullOrEmpty(currentUser.PixelaUsername) && !string.IsNullOrEmpty(currentUser.PixelaGraphId))
+                {
+                    var graphUrl = $"https://pixe.la/v1/users/{currentUser.PixelaUsername}/graphs/{currentUser.PixelaGraphId}.html";
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo 
+                    { 
+                        FileName = graphUrl, 
+                        UseShellExecute = true 
+                    });
+                }
+            };
+        }
+
+        private void SetupButton(DevExpress.XtraEditors.SimpleButton btn, System.Drawing.Color baseColor)
+        {
+            btn.Cursor = System.Windows.Forms.Cursors.Hand;
+            btn.AppearanceHovered.BackColor = System.Drawing.Color.FromArgb(50, baseColor);
+            btn.AppearanceHovered.Options.UseBackColor = true;
         }
 
         protected override async void OnLoad(EventArgs e)
@@ -92,9 +120,9 @@ namespace KeganOS.Views
 
                 picPixelaHeatmap.Visible = true;
                 
-                // Pixe.la returns SVG by default. We use appearance=dark to match Prometheus theme.
-                // We fetch the SVG string and render it using DevExpress SvgImage support.
-                string url = $"https://pixe.la/v1/users/{user.PixelaUsername}/graphs/{user.PixelaGraphId}?appearance=dark";
+                // Pixe.la returns SVG by default.
+                // User requested WHITE background, so we remove appearance=dark and don't strip the background.
+                string url = $"https://pixe.la/v1/users/{user.PixelaUsername}/graphs/{user.PixelaGraphId}";
                 
                 _logger.Debug("Fetching Pixe.la heatmap (SVG) from {Url}", url);
 
@@ -116,15 +144,22 @@ namespace KeganOS.Views
                         var svgContent = await response.Content.ReadAsStringAsync();
                         try 
                         {
-                            // Convert SVG string to stream
+                            // Load as SvgImage
+                            // Normalize SVG content for DevExpress compatibility
+                            // strict replacement of known issues
+                            svgContent = svgContent.Replace("fill=\"white\"", "fill=\"#FFFFFF\"")
+                                                   .Replace("fill-opacity=\"0.5\"", "fill-opacity=\"1.0\"");
+
                             using var ms = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgContent));
                             
-                            // Load as SvgImage
                             var svgImage = DevExpress.Utils.Svg.SvgImage.FromStream(ms);
+                            
+                            // Clear potential legacy Image property to avoid conflicts
+                            picPixelaHeatmap.Image = null; 
                             picPixelaHeatmap.SvgImage = svgImage;
                             picPixelaHeatmap.Visible = true;
                             
-                            _logger.Information("Pixe.la heatmap (SVG) refreshed successfully");
+                            _logger.Information("Pixe.la heatmap (SVG) refreshed successfully. Content Length: {Length}", svgContent.Length);
                             success = true;
                             break; // Success
                         }
