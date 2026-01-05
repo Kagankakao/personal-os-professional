@@ -11,11 +11,13 @@ public class AnalyticsService : IAnalyticsService
     private readonly ILogger _logger = Log.ForContext<AnalyticsService>();
     private readonly IJournalService _journalService;
     private readonly IAIProvider _aiProvider;
+    private readonly IPixelaService _pixelaService;
 
-    public AnalyticsService(IJournalService journalService, IAIProvider aiProvider)
+    public AnalyticsService(IJournalService journalService, IAIProvider aiProvider, IPixelaService pixelaService)
     {
         _journalService = journalService;
         _aiProvider = aiProvider;
+        _pixelaService = pixelaService;
     }
 
     public async Task<Dictionary<DayOfWeek, double>> GetWeeklyDataAsync(User user, DateTime weekStartDate)
@@ -41,14 +43,30 @@ public class AnalyticsService : IAnalyticsService
 
         try
         {
-            var entries = await _journalService.ReadEntriesAsync(user);
-            var weeklyEntries = entries.Where(e => e.Date >= start && e.Date < end);
-
-            foreach (var entry in weeklyEntries)
+            // Use Pixe.la for Weekly Report as requested
+            if (_pixelaService != null && _pixelaService.IsConfigured(user))
             {
-                if (entry.TimeWorked.HasValue)
+                var pixels = await _pixelaService.GetPixelsAsync(user, start, end);
+                foreach (var pixel in pixels)
                 {
-                    weeklyData[entry.Date.DayOfWeek] += entry.TimeWorked.Value.TotalHours;
+                    if (weeklyData.ContainsKey(pixel.Date.DayOfWeek))
+                    {
+                        weeklyData[pixel.Date.DayOfWeek] += pixel.Quantity;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback to journal if Pixe.la not configured
+                var entries = await _journalService.ReadEntriesAsync(user);
+                var weeklyEntries = entries.Where(e => e.Date >= start && e.Date < end);
+
+                foreach (var entry in weeklyEntries)
+                {
+                    if (entry.TimeWorked.HasValue)
+                    {
+                        weeklyData[entry.Date.DayOfWeek] += entry.TimeWorked.Value.TotalHours;
+                    }
                 }
             }
         }

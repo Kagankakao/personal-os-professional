@@ -4,7 +4,9 @@ using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
+using KeganOS.Core.Models;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KeganOS.Views
 {
@@ -14,23 +16,39 @@ namespace KeganOS.Views
         private readonly IMotivationalMessageService _motivationService;
         private readonly IPixelaService _pixelaService;
         private readonly IAnalyticsService _analyticsService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger = Log.ForContext<DashboardControl>();
 
-        public DashboardControl(IUserService userService, IMotivationalMessageService motivationService, IPixelaService pixelaService, IAnalyticsService analyticsService)
+        public DashboardControl(IUserService userService, IMotivationalMessageService motivationService, 
+            IPixelaService pixelaService, IAnalyticsService analyticsService, IServiceProvider serviceProvider)
         {
             _userService = userService;
             _motivationService = motivationService;
             _pixelaService = pixelaService;
             _analyticsService = analyticsService;
+            _serviceProvider = serviceProvider;
             InitializeComponent();
 
             // Setup simple button hover effects
             SetupButton(btnStart, System.Drawing.Color.FromArgb(76, 175, 80)); // Green
             SetupButton(btnCustomize, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
             SetupButton(btnLaunchKegomoDoro, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
+            SetupButton(btnManualTime, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
+            SetupButton(btnShowJournal, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
+
+            // Setup main buttons
+            btnStart.Click += BtnStart_Click;
+            btnCustomize.Click += BtnCustomize_Click;
+            btnLaunchKegomoDoro.Visible = false; // Hidden as requested, integrated into Start
+            
+            btnManualTime.Click += BtnManualTime_Click;
+            btnShowJournal.Click += BtnShowJournal_Click;
 
             // Setup heatmap cursor and click
             picPixelaHeatmap.Cursor = System.Windows.Forms.Cursors.Hand;
+            picPixelaHeatmap.Properties.NullText = " ";
+            // picPixelaHeatmap.BackColor = System.Drawing.Color.Transparent;
+            
             picPixelaHeatmap.Click += async (s, e) => 
             {
                 var currentUser = await _userService.GetCurrentUserAsync();
@@ -44,6 +62,151 @@ namespace KeganOS.Views
                     });
                 }
             };
+        }
+
+        private void BtnStart_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                string kegomoDoroPath = FindKegomoDoroPath();
+                
+                if (!string.IsNullOrEmpty(kegomoDoroPath) && System.IO.File.Exists(kegomoDoroPath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "python",
+                        Arguments = $"\"{kegomoDoroPath}\"",
+                        UseShellExecute = true,
+                        WorkingDirectory = System.IO.Path.GetDirectoryName(kegomoDoroPath)
+                    });
+                    _logger.Information("Launched KegomoDoro from {Path}", kegomoDoroPath);
+                }
+                else
+                {
+                    XtraMessageBox.Show("KegomoDoro 'main.py' not found in parent directories.", "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to launch KegomoDoro");
+                XtraMessageBox.Show($"Failed to launch: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void BtnManualTime_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var user = await _userService.GetCurrentUserAsync();
+                if (user == null) return;
+                
+                string result = XtraInputBox.Show("Enter hours to log (e.g. 1.5):", "Log Manual Time", "0");
+                if (double.TryParse(result, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double hours) && hours > 0)
+                {
+                    bool success = await _pixelaService.PostPixelAsync(user, DateTime.Today, hours);
+                    if (success)
+                    {
+                        XtraMessageBox.Show($"Successfully logged {hours} hours!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await RefreshStatsAsync();
+                        await RefreshPixelaHeatmapAsync();
+                    }
+                    else
+                    {
+                        XtraMessageBox.Show("Failed to log time. Check logs or internet connection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to log manual time");
+            }
+        }
+
+        private async void BtnShowJournal_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Resolve JournalControl via ServiceProvider
+                using var scope = _serviceProvider.CreateScope(); 
+                var journalControl = (XtraUserControl)scope.ServiceProvider.GetService(typeof(JournalControl));
+                if (journalControl == null)
+                {
+                    XtraMessageBox.Show("Journal module not loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                using var form = new XtraForm();
+                form.Text = "Daily Journal";
+                form.Size = new System.Drawing.Size(800, 600);
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.Controls.Add(journalControl);
+                journalControl.Dock = DockStyle.Fill;
+                
+                form.ShowDialog();
+                // Refresh stats after closing logic if needed
+                await RefreshStatsAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to open journal");
+            }
+        }
+
+        private void BtnCustomize_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                 // Resolve SettingsControl
+                var settingsControl = (XtraUserControl)_serviceProvider.GetService(typeof(SettingsControl));
+                
+                if (settingsControl == null)
+                {
+                     XtraMessageBox.Show("Settings module not loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                     return;
+                }
+
+                using var settingsForm = new XtraForm();
+                settingsForm.Text = "Settings";
+                settingsForm.Size = new System.Drawing.Size(600, 500);
+                settingsForm.StartPosition = FormStartPosition.CenterParent;
+                settingsForm.Controls.Add(settingsControl);
+                settingsControl.Dock = DockStyle.Fill;
+
+                settingsForm.ShowDialog();
+                // Refresh anything if needed
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to open settings");
+            }
+        }
+
+        private string FindKegomoDoroPath()
+        {
+            var currentDir = new System.IO.DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            // Search up to 6 levels up
+            for (int i = 0; i < 7; i++)
+            {
+                if (currentDir == null) break;
+                
+                var potentialPath = System.IO.Path.Combine(currentDir.FullName, "kegomodoro", "main.py");
+                if (System.IO.File.Exists(potentialPath))
+                {
+                    return potentialPath;
+                }
+                
+                // Also check nested personal-os structure
+                var potentialPathNested = System.IO.Path.Combine(currentDir.FullName, "personal-os", "kegomodoro", "main.py");
+                if (System.IO.File.Exists(potentialPathNested))
+                {
+                    return potentialPathNested;
+                }
+
+                currentDir = currentDir.Parent;
+            }
+            return null;
         }
 
         private void SetupButton(DevExpress.XtraEditors.SimpleButton btn, System.Drawing.Color baseColor)
@@ -119,12 +282,34 @@ namespace KeganOS.Views
                 }
 
                 picPixelaHeatmap.Visible = true;
+                progressHeatmapLoading.Visible = true;
+                progressHeatmapLoading.BringToFront();
                 
                 // Pixe.la returns SVG by default.
                 // User requested WHITE background, so we remove appearance=dark and don't strip the background.
                 string url = $"https://pixe.la/v1/users/{user.PixelaUsername}/graphs/{user.PixelaGraphId}";
                 
                 _logger.Debug("Fetching Pixe.la heatmap (SVG) from {Url}", url);
+
+                string cachePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pixela_cache.svg");
+
+                // 1. Load from cache immediately if exists
+                if (System.IO.File.Exists(cachePath))
+                {
+                    try
+                    {
+                         _logger.Debug("Loading Pixe.la heatmap from cache: {Path}", cachePath);
+                         using var fs = System.IO.File.OpenRead(cachePath);
+                         var cachedSvg = DevExpress.Utils.Svg.SvgImage.FromStream(fs);
+                         picPixelaHeatmap.Image = null;
+                         picPixelaHeatmap.SvgImage = cachedSvg;
+                         picPixelaHeatmap.Visible = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning(ex, "Failed to load cached heatmap");
+                    }
+                }
 
                 using var client = new System.Net.Http.HttpClient();
                 if (!string.IsNullOrEmpty(user.PixelaToken))
@@ -160,6 +345,18 @@ namespace KeganOS.Views
                             picPixelaHeatmap.Visible = true;
                             
                             _logger.Information("Pixe.la heatmap (SVG) refreshed successfully. Content Length: {Length}", svgContent.Length);
+                            
+                            // Update cache
+                            try
+                            {
+                                await System.IO.File.WriteAllTextAsync(cachePath, svgContent);
+                                _logger.Debug("Updated Pixe.la heatmap cache");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Warning(ex, "Failed to write heatmap cache");
+                            }
+
                             success = true;
                             break; // Success
                         }
@@ -196,6 +393,10 @@ namespace KeganOS.Views
             {
                 _logger.Error(ex, "Failed to refresh Pixela heatmap");
                 picPixelaHeatmap.Visible = false;
+            }
+            finally
+            {
+                progressHeatmapLoading.Visible = false;
             }
         }
 

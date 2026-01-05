@@ -24,9 +24,12 @@ partial class DashboardControl
         this.btnStart = new DevExpress.XtraEditors.SimpleButton();
         this.lblTimerDisplay = new DevExpress.XtraEditors.LabelControl();
         this.pnlStats = new DevExpress.XtraEditors.GroupControl();
+        this.progressHeatmapLoading = new DevExpress.XtraWaitForm.ProgressPanel();
         this.picPixelaHeatmap = new DevExpress.XtraEditors.PictureEdit();
         this.lblBestValue = new DevExpress.XtraEditors.LabelControl();
         this.lblBest = new DevExpress.XtraEditors.LabelControl();
+        this.btnManualTime = new DevExpress.XtraEditors.SimpleButton();
+        this.btnShowJournal = new DevExpress.XtraEditors.SimpleButton();
         this.lblStreakValue = new DevExpress.XtraEditors.LabelControl();
         this.lblStreak = new DevExpress.XtraEditors.LabelControl();
         this.progressXP = new DevExpress.XtraEditors.ProgressBarControl();
@@ -164,7 +167,10 @@ partial class DashboardControl
         this.pnlStats.Size = new System.Drawing.Size(490, 500);
         this.pnlStats.TabIndex = 0;
         this.pnlStats.Text = "📊 Your Stats";
+        this.pnlStats.Controls.Add(this.progressHeatmapLoading);
         this.pnlStats.Controls.Add(this.picPixelaHeatmap);
+        this.pnlStats.Controls.Add(this.btnManualTime);
+        this.pnlStats.Controls.Add(this.btnShowJournal);
         this.pnlStats.Controls.Add(this.lblBestValue);
         this.pnlStats.Controls.Add(this.lblBest);
         this.pnlStats.Controls.Add(this.lblStreakValue);
@@ -177,6 +183,44 @@ partial class DashboardControl
         this.pnlStats.Controls.Add(this.lblWeek);
         this.pnlStats.Controls.Add(this.lblTodayValue);
         this.pnlStats.Controls.Add(this.lblToday);
+        // 
+        // progressHeatmapLoading
+        // 
+        this.progressHeatmapLoading.Appearance.BackColor = System.Drawing.Color.Transparent;
+        this.progressHeatmapLoading.Appearance.Options.UseBackColor = true;
+        this.progressHeatmapLoading.BarAnimationElementThickness = 2;
+        this.progressHeatmapLoading.Caption = "Refreshing Heatmap...";
+        this.progressHeatmapLoading.Description = "Please wait";
+        this.progressHeatmapLoading.Location = new System.Drawing.Point(145, 360);
+        this.progressHeatmapLoading.Name = "progressHeatmapLoading";
+        this.progressHeatmapLoading.Size = new System.Drawing.Size(200, 60);
+        this.progressHeatmapLoading.TabIndex = 22;
+        this.progressHeatmapLoading.Text = "progressPanel1";
+        this.progressHeatmapLoading.Visible = false;
+        // 
+        // btnManualTime
+        // 
+        this.btnManualTime.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
+        this.btnManualTime.Appearance.Options.UseFont = true;
+        this.btnManualTime.Location = new System.Drawing.Point(300, 78);
+        this.btnManualTime.Name = "btnManualTime";
+        this.btnManualTime.Size = new System.Drawing.Size(80, 24);
+        this.btnManualTime.TabIndex = 20;
+        this.btnManualTime.Text = "+ Log Time";
+        this.btnManualTime.TabIndex = 20;
+        this.btnManualTime.Text = "+ Log Time";
+        this.btnManualTime.ToolTip = "Manually add hours to Pixe.la";
+        // 
+        // btnShowJournal
+        // 
+        this.btnShowJournal.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
+        this.btnShowJournal.Appearance.Options.UseFont = true;
+        this.btnShowJournal.Location = new System.Drawing.Point(300, 108);
+        this.btnShowJournal.Name = "btnShowJournal";
+        this.btnShowJournal.Size = new System.Drawing.Size(80, 24);
+        this.btnShowJournal.TabIndex = 21;
+        this.btnShowJournal.Text = "Notebook";
+        this.btnShowJournal.ToolTip = "Open Daily Journal";
         // 
         // lblToday
         // 
@@ -305,11 +349,13 @@ partial class DashboardControl
         // 
         // picPixelaHeatmap
         // 
-        this.picPixelaHeatmap.Location = new System.Drawing.Point(30, 310);
+        this.picPixelaHeatmap.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+        this.picPixelaHeatmap.Location = new System.Drawing.Point(20, 300);
         this.picPixelaHeatmap.Name = "picPixelaHeatmap";
-        this.picPixelaHeatmap.Properties.ShowCameraMenuItem = DevExpress.XtraEditors.Controls.CameraMenuItemVisibility.Auto;
+        this.picPixelaHeatmap.Properties.ShowCameraMenuItem = DevExpress.XtraEditors.Controls.CameraMenuItemVisibility.Never;
         this.picPixelaHeatmap.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Zoom;
-        this.picPixelaHeatmap.Size = new System.Drawing.Size(400, 160);
+        this.picPixelaHeatmap.Size = new System.Drawing.Size(450, 180);
         this.picPixelaHeatmap.TabIndex = 12;
         this.picPixelaHeatmap.ToolTip = "Pixe.la Heatmap";
         // 
@@ -347,7 +393,10 @@ partial class DashboardControl
     private DevExpress.XtraEditors.SimpleButton btnStart;
     private DevExpress.XtraEditors.SimpleButton btnCustomize;
     private DevExpress.XtraEditors.SimpleButton btnLaunchKegomoDoro;
+    private DevExpress.XtraEditors.SimpleButton btnManualTime;
+    private DevExpress.XtraEditors.SimpleButton btnShowJournal;
     private DevExpress.XtraEditors.GroupControl pnlStats;
+    private DevExpress.XtraWaitForm.ProgressPanel progressHeatmapLoading;
     private DevExpress.XtraEditors.PictureEdit picPixelaHeatmap;
     private DevExpress.XtraEditors.LabelControl lblToday;
     private DevExpress.XtraEditors.LabelControl lblTodayValue;
