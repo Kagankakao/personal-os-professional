@@ -28,12 +28,12 @@ partial class NotesControl
         this.txtTitle = new DevExpress.XtraEditors.TextEdit();
         this.txtContent = new DevExpress.XtraEditors.MemoEdit();
         this.pnlImages = new System.Windows.Forms.FlowLayoutPanel();
-        this.lblDropHint = new System.Windows.Forms.Label();
         this.pnlEditorFooter = new DevExpress.XtraEditors.PanelControl();
         this.lblWordCount = new DevExpress.XtraEditors.LabelControl();
         this.lblLastSaved = new DevExpress.XtraEditors.LabelControl();
         this.btnSave = new DevExpress.XtraEditors.SimpleButton();
         this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
+        this.tableEditor = new System.Windows.Forms.TableLayoutPanel();
         this.tmrSearchDebounce = new System.Windows.Forms.Timer(this.components);
         
         ((System.ComponentModel.ISupportInitialize)(this.pnlHeader)).BeginInit();
@@ -54,6 +54,7 @@ partial class NotesControl
         ((System.ComponentModel.ISupportInitialize)(this.txtContent.Properties)).BeginInit();
         ((System.ComponentModel.ISupportInitialize)(this.pnlEditorFooter)).BeginInit();
         this.pnlEditorFooter.SuspendLayout();
+        this.tableEditor.SuspendLayout();
         this.SuspendLayout();
         
         // ════════════════════════════════════════════════════════════════════
@@ -147,19 +148,32 @@ partial class NotesControl
         this.pnlEditor.TabIndex = 0;
         this.pnlEditor.Text = "Note Editor";
         
+        this.pnlEditor.Controls.Add(this.tableEditor);
         this.pnlEditor.Controls.Add(this.pnlEditorFooter); // Bottom
-        this.pnlEditor.Controls.Add(this.txtTitle);        // Top
-        this.pnlEditor.Controls.Add(this.pnlImages);       // Top (Collapsible gallery)
-        this.pnlEditor.Controls.Add(this.txtContent);      // Fill
         
+        // tableEditor
+        this.tableEditor.ColumnCount = 1;
+        this.tableEditor.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+        this.tableEditor.Controls.Add(this.txtTitle, 0, 0);
+        this.tableEditor.Controls.Add(this.pnlImages, 0, 1);
+        this.tableEditor.Controls.Add(this.txtContent, 0, 2);
+        this.tableEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tableEditor.Location = new System.Drawing.Point(2, 25);
+        this.tableEditor.Name = "tableEditor";
+        this.tableEditor.RowCount = 3;
+        this.tableEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 65F));
+        this.tableEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 0F)); // Images Row (Dynamically 0 or 135)
+        this.tableEditor.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+        this.tableEditor.Size = new System.Drawing.Size(656, 423);
+        this.tableEditor.TabIndex = 3;
+        this.tableEditor.BackColor = System.Drawing.Color.White;
+        
+        // Footer always at bottom
         this.pnlEditorFooter.BringToFront();
-        this.txtTitle.BringToFront();
-        this.pnlImages.BringToFront();
-        this.txtContent.SendToBack();
         
         // Title Input
-        this.txtTitle.Dock = System.Windows.Forms.DockStyle.Top;
-        this.txtTitle.Location = new System.Drawing.Point(2, 25);
+        this.txtTitle.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.txtTitle.Margin = new System.Windows.Forms.Padding(10, 5, 10, 0);
         this.txtTitle.Name = "txtTitle";
         this.txtTitle.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI Light", 24F);
         this.txtTitle.Properties.Appearance.ForeColor = System.Drawing.Color.Black;
@@ -168,12 +182,12 @@ partial class NotesControl
         this.txtTitle.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.txtTitle.Properties.NullValuePrompt = "Deep thoughts begin here...";
         this.txtTitle.Properties.NullValuePromptShowForEmptyValue = true;
-        this.txtTitle.Size = new System.Drawing.Size(656, 50);
+        this.txtTitle.Size = new System.Drawing.Size(656, 60);
         this.txtTitle.TabIndex = 0;
         
         // Content
         this.txtContent.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.txtContent.Location = new System.Drawing.Point(2, 75);
+        this.txtContent.Margin = new System.Windows.Forms.Padding(10, 5, 10, 0);
         this.txtContent.Name = "txtContent";
         this.txtContent.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
         this.txtContent.Properties.Appearance.ForeColor = System.Drawing.Color.Black;
@@ -183,30 +197,22 @@ partial class NotesControl
         this.txtContent.Properties.NullValuePrompt = "The mind is like a parachute. It doesn't work if it isn't open...";
         this.txtContent.Properties.NullValuePromptShowForEmptyValue = true;
         this.txtContent.Properties.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-        this.txtContent.Size = new System.Drawing.Size(656, 300);
+        this.txtContent.Size = new System.Drawing.Size(656, 275);
         this.txtContent.TabIndex = 1;
         this.txtContent.AllowDrop = true;
         
         // Images Panel (Gallery - Visible only if has images)
-        this.pnlImages.Dock = System.Windows.Forms.DockStyle.Top;
-        this.pnlImages.Location = new System.Drawing.Point(2, 61);
+        this.pnlImages.Dock = System.Windows.Forms.DockStyle.Fill;
         this.pnlImages.Name = "pnlImages";
-        this.pnlImages.Size = new System.Drawing.Size(656, 90);
+        this.pnlImages.Size = new System.Drawing.Size(656, 135);
         this.pnlImages.MinimumSize = new System.Drawing.Size(0, 0);
         this.pnlImages.AutoScroll = true;
-        this.pnlImages.Padding = new System.Windows.Forms.Padding(10, 5, 10, 5);
+        this.pnlImages.Padding = new System.Windows.Forms.Padding(15, 10, 15, 10);
         this.pnlImages.AllowDrop = true;
         this.pnlImages.BorderStyle = System.Windows.Forms.BorderStyle.None;
-        this.pnlImages.BackColor = System.Drawing.Color.FromArgb(35, 35, 45); // Subtle separator bg
+        this.pnlImages.BackColor = System.Drawing.Color.White; 
         this.pnlImages.Visible = false;
         
-        // Add Image Action in Footer
-        this.lblDropHint.Text = "📷 Add Image";
-        this.lblDropHint.ForeColor = System.Drawing.Color.FromArgb(180, 180, 180);
-        this.lblDropHint.Font = new System.Drawing.Font("Segoe UI", 9F);
-        this.lblDropHint.AutoSize = true;
-        this.lblDropHint.Location = new System.Drawing.Point(260, 18);
-        this.pnlEditorFooter.Controls.Add(this.lblDropHint);
         
         // Editor Footer
         this.pnlEditorFooter.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
@@ -215,6 +221,7 @@ partial class NotesControl
         this.pnlEditorFooter.Name = "pnlEditorFooter";
         this.pnlEditorFooter.Size = new System.Drawing.Size(656, 50);
         this.pnlEditorFooter.TabIndex = 2;
+        this.pnlEditorFooter.Padding = new System.Windows.Forms.Padding(10, 0, 10, 0);
         this.pnlEditorFooter.Controls.Add(this.lblWordCount);
         this.pnlEditorFooter.Controls.Add(this.lblLastSaved);
         this.pnlEditorFooter.Controls.Add(this.btnSave);
@@ -223,38 +230,44 @@ partial class NotesControl
         // Word Count
         this.lblWordCount.Appearance.ForeColor = System.Drawing.Color.Gray;
         this.lblWordCount.Appearance.Options.UseForeColor = true;
-        this.lblWordCount.Location = new System.Drawing.Point(10, 18);
+        this.lblWordCount.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+        this.lblWordCount.Dock = System.Windows.Forms.DockStyle.Left;
+        this.lblWordCount.Location = new System.Drawing.Point(10, 0);
         this.lblWordCount.Name = "lblWordCount";
-        this.lblWordCount.Size = new System.Drawing.Size(100, 15);
+        this.lblWordCount.Size = new System.Drawing.Size(100, 50);
         this.lblWordCount.Text = "0 words • 0 chars";
         
         // Last Saved
         this.lblLastSaved.Appearance.ForeColor = System.Drawing.Color.Gray;
         this.lblLastSaved.Appearance.Options.UseForeColor = true;
-        this.lblLastSaved.Location = new System.Drawing.Point(130, 18);
+        this.lblLastSaved.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+        this.lblLastSaved.Dock = System.Windows.Forms.DockStyle.Left;
+        this.lblLastSaved.Location = new System.Drawing.Point(110, 0);
         this.lblLastSaved.Name = "lblLastSaved";
-        this.lblLastSaved.Size = new System.Drawing.Size(100, 15);
+        this.lblLastSaved.Size = new System.Drawing.Size(120, 50);
         this.lblLastSaved.Text = "Unsaved";
         
         // Delete Button
-        this.btnDelete.Anchor = System.Windows.Forms.AnchorStyles.Right;
         this.btnDelete.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
         this.btnDelete.Appearance.ForeColor = System.Drawing.Color.FromArgb(244, 67, 54);
         this.btnDelete.Appearance.Options.UseFont = true;
         this.btnDelete.Appearance.Options.UseForeColor = true;
-        this.btnDelete.Location = new System.Drawing.Point(450, 10);
+        this.btnDelete.Dock = System.Windows.Forms.DockStyle.Right;
+        this.btnDelete.Location = new System.Drawing.Point(450, 9);
+        this.btnDelete.Margin = new System.Windows.Forms.Padding(0, 9, 5, 9);
         this.btnDelete.Name = "btnDelete";
         this.btnDelete.Size = new System.Drawing.Size(90, 32);
         this.btnDelete.TabIndex = 2;
         this.btnDelete.Text = "🗑 Delete";
         
         // Save Button
-        this.btnSave.Anchor = System.Windows.Forms.AnchorStyles.Right;
         this.btnSave.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
         this.btnSave.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
         this.btnSave.Appearance.Options.UseFont = true;
         this.btnSave.Appearance.Options.UseForeColor = true;
-        this.btnSave.Location = new System.Drawing.Point(550, 10);
+        this.btnSave.Dock = System.Windows.Forms.DockStyle.Right;
+        this.btnSave.Location = new System.Drawing.Point(545, 9);
+        this.btnSave.Margin = new System.Windows.Forms.Padding(5, 9, 0, 9);
         this.btnSave.Name = "btnSave";
         this.btnSave.Size = new System.Drawing.Size(100, 32);
         this.btnSave.TabIndex = 3;
@@ -291,6 +304,7 @@ partial class NotesControl
         ((System.ComponentModel.ISupportInitialize)(this.pnlEditorFooter)).EndInit();
         this.pnlEditorFooter.ResumeLayout(false);
         this.pnlEditorFooter.PerformLayout();
+        this.tableEditor.ResumeLayout(false);
         this.ResumeLayout(false);
     }
 
@@ -317,6 +331,6 @@ partial class NotesControl
     private DevExpress.XtraEditors.SimpleButton btnDelete;
     private DevExpress.XtraEditors.SimpleButton btnSave;
     private System.Windows.Forms.FlowLayoutPanel pnlImages;
-    private System.Windows.Forms.Label lblDropHint;
+    private System.Windows.Forms.TableLayoutPanel tableEditor;
     private System.Windows.Forms.Timer tmrSearchDebounce;
 }

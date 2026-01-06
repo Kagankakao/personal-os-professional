@@ -24,9 +24,6 @@ namespace KeganOS.Views
         private readonly string _imagesFolder;
         
         // Animation & UI state
-        private System.Windows.Forms.Timer _tmrPulse;
-        private float _pulseOpacity = 0.5f;
-        private bool _pulseIncreasing = true;
         private int _hoverIndex = -1;
         private System.Windows.Forms.Timer _tmrAutoSave;
 
@@ -41,7 +38,7 @@ namespace KeganOS.Views
                 "KeganOS", "NoteImages");
             // Directory creation moved to OnLoad to prevent constructor crashes
             
-            InitializeComponent();
+            InitializeComponent(); // Layout updated
             
             // Correction for "White Screen" issue: Force Dark Background
             ApplyTheme();
@@ -75,13 +72,9 @@ namespace KeganOS.Views
             this.txtContent.DragEnter += OnDragEnter;
             this.txtContent.DragDrop += OnDragDrop;
             
-            this.lblDropHint.AllowDrop = true;
-            this.lblDropHint.DragEnter += OnDragEnter;
-            this.lblDropHint.DragDrop += OnDragDrop;
-            
-            // Add Image button click
-            this.lblDropHint.Click += LblDropHint_Click;
-            this.lblDropHint.Cursor = Cursors.Hand;
+            this.txtContent.AllowDrop = true;
+            this.txtContent.DragEnter += OnDragEnter;
+            this.txtContent.DragDrop += OnDragDrop;
 
             // Glassmorphism Paint
             this.pnlHeader.Paint += PnlHeader_Paint;
@@ -100,50 +93,10 @@ namespace KeganOS.Views
                 listNotes.Invalidate();
             };
 
-            // Neural Sync Pulse
-            _tmrPulse = new System.Windows.Forms.Timer { Interval = 50 };
-            _tmrPulse.Tick += (s, e) => {
-                if (_pulseIncreasing) _pulseOpacity += 0.05f;
-                else _pulseOpacity -= 0.05f;
-
-                if (_pulseOpacity >= 1.0f) _pulseIncreasing = false;
-                if (_pulseOpacity <= 0.3f) _pulseIncreasing = true;
-                
-                pnlEditorFooter.Invalidate();
-            };
-            _tmrPulse.Start();
-
-            this.pnlEditorFooter.Paint += PnlEditorFooter_Paint;
 
             // Auto-Save Timer
-            _tmrAutoSave = new System.Windows.Forms.Timer { Interval = 2000 }; // 2 seconds
+            _tmrAutoSave = new System.Windows.Forms.Timer { Interval = 300 }; // 0.3 seconds (Very Frequent)
             _tmrAutoSave.Tick += TmrAutoSave_Tick;
-
-            // UI Fix: Spacer to prevent overlap
-            var pnlSpacer = new PanelControl();
-            pnlSpacer.Height = 15;
-            pnlSpacer.Dock = DockStyle.Top;
-            pnlSpacer.BorderStyle = BorderStyles.NoBorder;
-            pnlSpacer.Appearance.BackColor = Color.Transparent;
-            pnlSpacer.Appearance.Options.UseBackColor = true;
-            
-            // Adjust Dock Order
-            this.pnlEditor.Controls.Add(pnlSpacer);
-            pnlSpacer.BringToFront(); // Ensure it acts relative to others
-            this.pnlImages.SendToBack();
-            this.txtTitle.SendToBack(); // Top-most doc
-            this.pnlEditorFooter.SendToBack(); // Bottom
-            
-            // Re-ordering logic to be precise:
-            // Controls.Add adds to the beginning of the list (z-order top).
-            // For Dock=Top, the last added control is at the Top? No, Reverse.
-            // Let's just create the spacer and ensure it sits between Title and Content.
-            // Content is Dock.Fill. Title is Dock.Top. Images is Dock.Top.
-            // If we add pnlSpacer (Dock.Top), it needs to be added *after* Title (so it's below it) or *before* Content.
-            
-            // Correct approach: Set the padding on the Content text box container? 
-            // Better: Add padding to the Dock=Top elements.
-            txtTitle.Padding = new Padding(0, 0, 0, 10);
         }
 
         protected override async void OnLoad(EventArgs e)
@@ -223,19 +176,22 @@ namespace KeganOS.Views
 
         private void ListNotes_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            if (listNotes.SelectedIndex >= 0 && listNotes.SelectedIndex < _filteredNotes.Count)
+            if (listNotes.SelectedItem is NoteItem selectedNote)
             {
-                _currentNote = _filteredNotes[listNotes.SelectedIndex];
+                _currentNote = selectedNote;
                 txtTitle.Text = _currentNote.Title;
                 txtContent.Text = _currentNote.Content;
                 UpdateWordCount();
                 UpdateLastSaved();
                 RefreshImages();
                 
-                // Focus logic
-                txtContent.Focus();
-                if (txtContent.Text.Length > 0)
-                    txtContent.SelectionStart = txtContent.Text.Length;
+                // Focus logic - Only focus content if we are NOT searching
+                if (!txtSearch.ContainsFocus)
+                {
+                    txtContent.Focus();
+                    if (txtContent.Text.Length > 0)
+                        txtContent.SelectionStart = txtContent.Text.Length;
+                }
                 
                 txtTitle.Properties.Appearance.Font = new Font("Segoe UI Light", 24F);
             }
@@ -248,7 +204,8 @@ namespace KeganOS.Views
                 Id = Guid.NewGuid().ToString(),
                 Title = "", 
                 Content = "",
-                CreatedAt = DateTime.Now 
+                CreatedAt = DateTime.Now,
+                LastModified = DateTime.Now
             };
             txtTitle.Text = "";
             txtContent.Text = "";
@@ -285,7 +242,8 @@ namespace KeganOS.Views
             {
                 _currentNote = new NoteItem { 
                     Id = Guid.NewGuid().ToString(),
-                    CreatedAt = DateTime.Now 
+                    CreatedAt = DateTime.Now,
+                    LastModified = DateTime.Now
                 };
             }
             if (string.IsNullOrEmpty(_currentNote.Id))
@@ -402,16 +360,16 @@ namespace KeganOS.Views
             g.SmoothingMode = SmoothingMode.AntiAlias;
             var rect = pnlHeader.ClientRectangle;
 
-            // Glass Background (Simulated)
+            // Soft White/Blue Gradient
             using (var brush = new LinearGradientBrush(rect, 
-                Color.FromArgb(60, 255, 255, 255), 
-                Color.FromArgb(10, 255, 255, 255), 45f))
+                Color.FromArgb(245, 247, 250), 
+                Color.FromArgb(230, 235, 245), 45f))
             {
                 g.FillRectangle(brush, rect);
             }
 
-            // Accent Line (Bottom)
-            using (var pen = new Pen(Color.FromArgb(100, 0, 255, 255), 2)) // Cyan glow
+            // Subtle Accent Line (Bottom)
+            using (var pen = new Pen(Color.FromArgb(50, 0, 120, 215), 1)) 
             {
                 g.DrawLine(pen, 0, rect.Height - 1, rect.Width, rect.Height - 1);
             }
@@ -429,22 +387,27 @@ namespace KeganOS.Views
             var rect = e.Bounds;
             rect.Inflate(-5, -5);
 
-            Color bgColor = Color.FromArgb(30, 30, 35);
-            if (isSelected) bgColor = Color.FromArgb(45, 0, 150, 150); // Muted Cyan
-            else if (isHovered) bgColor = Color.FromArgb(40, 40, 45);
+            Color bgColor = Color.FromArgb(255, 255, 255);
+            if (isSelected) bgColor = Color.FromArgb(230, 240, 255); // Light Blue Selection
+            else if (isHovered) bgColor = Color.FromArgb(245, 245, 250);
 
             e.Cache.FillRectangle(bgColor, rect);
 
             // Selection Edge
             if (isSelected)
             {
-                e.Cache.DrawLine(new Pen(Color.Cyan, 2), new Point(rect.X, rect.Y), new Point(rect.X, rect.Bottom));
+                e.Cache.DrawLine(new Pen(Color.FromArgb(0, 120, 215), 3), new Point(rect.X, rect.Y), new Point(rect.X, rect.Bottom));
+            }
+            else
+            {
+                // Subtle border for cards in light mode
+                e.Cache.DrawRectangle(new Pen(Color.FromArgb(220, 220, 225), 1), rect);
             }
 
             // 2. Draw Text (Title)
             using (var fontTitle = new Font("Segoe UI Semibold", 11))
             {
-                e.Cache.DrawString(note.Title ?? "Untitled", fontTitle, Brushes.White, rect.X + 15, rect.Y + 12);
+                e.Cache.DrawString(note.Title ?? "Untitled", fontTitle, new SolidBrush(Color.FromArgb(40, 40, 40)), rect.X + 15, rect.Y + 12);
             }
 
             // 3. Draw Subtext (Date & Preview)
@@ -455,37 +418,19 @@ namespace KeganOS.Views
             using (var fontSmall = new Font("Segoe UI", 8.5f))
             {
                 e.Cache.DrawString(dateStr, fontSmall, Brushes.Gray, rect.X + 15, rect.Y + 35);
-                e.Cache.DrawString(previewText, fontSmall, Brushes.Silver, rect.X + 15, rect.Y + 55);
+                e.Cache.DrawString(previewText, fontSmall, Brushes.DimGray, rect.X + 15, rect.Y + 55);
 
                 // Pinned indicator
                 if (note.IsPinned)
                 {
-                    e.Cache.DrawString("★", fontSmall, Brushes.Gold, rect.Right - 25, rect.Y + 12);
+                    e.Cache.DrawString("★", fontSmall, Brushes.Orange, rect.Right - 25, rect.Y + 12);
                 }
             }
 
             e.Handled = true;
         }
 
-        private void PnlEditorFooter_Paint(object? sender, PaintEventArgs e)
-        {
-            var g = e.Graphics;
-            var rect = pnlEditorFooter.ClientRectangle;
-            
-            // "Neural Mesh Synced" Indicator
-            int dotX = 350;
-            int dotY = 22;
-            int alpha = (int)(_pulseOpacity * 255);
-            
-            using (var pulseBrush = new SolidBrush(Color.FromArgb(alpha, 0, 255, 127))) // Spring Green
-            {
-                g.FillEllipse(pulseBrush, dotX, dotY, 8, 8);
-            }
-            
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-            using var font = new Font("Segoe UI", 7, FontStyle.Bold);
-            g.DrawString("NEURAL MESH SYNCED", font, Brushes.Gray, dotX + 15, dotY - 2);
-        }
+        // Manual Footer Painting removed in favor of controls
 
         // ═══════════════════════════════════════════════════════════════════
         // IMAGE DRAG & DROP
@@ -512,56 +457,7 @@ namespace KeganOS.Views
             var files = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (files == null) return;
             
-            // Ensure we have a note to attach to
-            if (_currentNote == null)
-            {
-                _currentNote = new NoteItem { CreatedAt = DateTime.Now };
-            }
-
-            // Calculate drop position if dropped on text editor
-            int dropIndex = -1;
-            if (sender == txtContent)
-            {
-                Point screenPoint = new Point(e.X, e.Y);
-                Point clientPoint = txtContent.PointToClient(screenPoint);
-                dropIndex = txtContent.GetCharIndexFromPosition(clientPoint);
-            }
-            
-            string insertionText = "";
-            bool addedAny = false;
-
-            foreach (var file in files.Where(IsImageFile))
-            {
-                try
-                {
-                    var ext = Path.GetExtension(file);
-                    var newName = $"{Guid.NewGuid()}{ext}";
-                    var destPath = Path.Combine(_imagesFolder, newName);
-                    File.Copy(file, destPath);
-                    
-                    _currentNote.ImagePaths.Add(destPath);
-                    insertionText += $"\r\n![image]({newName})\r\n";
-                    addedAny = true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "Failed to copy image: {Path}", file);
-                }
-            }
-            
-            if (addedAny)
-            {
-                if (dropIndex >= 0)
-                {
-                    txtContent.Text = txtContent.Text.Insert(dropIndex, insertionText);
-                    txtContent.SelectionStart = dropIndex + insertionText.Length;
-                }
-                else
-                {
-                    txtContent.Text += insertionText;
-                }
-                RefreshImages();
-            }
+            AddImages(files);
         }
 
         private bool IsImageFile(string path)
@@ -570,24 +466,16 @@ namespace KeganOS.Views
             return ext is ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".webp";
         }
 
-        private void LblDropHint_Click(object? sender, EventArgs e)
+
+        private void AddImages(IEnumerable<string> files)
         {
-            using var openFileDialog = new OpenFileDialog
-            {
-                Title = "Select Images",
-                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp|All Files|*.*",
-                Multiselect = true
-            };
-            
-            if (openFileDialog.ShowDialog() != DialogResult.OK) return;
-            
             // Ensure we have a note
             if (_currentNote == null)
             {
-                _currentNote = new NoteItem { CreatedAt = DateTime.Now };
+                _currentNote = new NoteItem { CreatedAt = DateTime.Now, Id = Guid.NewGuid().ToString() };
             }
             
-            foreach (var file in openFileDialog.FileNames.Where(IsImageFile))
+            foreach (var file in files.Where(IsImageFile))
             {
                 try
                 {
@@ -605,85 +493,113 @@ namespace KeganOS.Views
             }
             
             RefreshImages();
+            StartAutoSaveTimer();
         }
 
         private void RefreshImages()
         {
+            if (tableEditor == null) return;
+            
             bool hasImages = _currentNote?.ImagePaths != null && _currentNote.ImagePaths.Any();
             
-            // Only show the image panel if there are images
-            pnlImages.Visible = hasImages;
-            
-            // Clear existing controls
-            pnlImages.Controls.Clear();
-            
-            if (!hasImages) return;
-            
-            foreach (var imagePath in _currentNote.ImagePaths)
+            tableEditor.SuspendLayout();
+            try
             {
-                if (!File.Exists(imagePath)) continue;
+                // Only show the image panel if there are images
+                pnlImages.Visible = hasImages;
                 
-                try
+                // Update TableLayoutPanel Row Height for Images (Now Row 1)
+                tableEditor.RowStyles[1].Height = hasImages ? 135F : 0F;
+                
+                // Clear existing controls
+                pnlImages.Controls.Clear();
+                
+                if (hasImages)
                 {
-                    var pic = new PictureBox
+                    // Header for the gallery
+                    var lblHeader = new LabelControl
                     {
-                        Size = new Size(100, 75), // Consistent 4:3 aspect ratio
-                        SizeMode = PictureBoxSizeMode.Zoom,
-                        Image = Image.FromFile(imagePath),
-                        Margin = new Padding(0, 5, 10, 5), // Spacing between thumbnails
-                        Cursor = Cursors.Hand,
-                        Tag = imagePath,
-                        BorderStyle = BorderStyle.FixedSingle,
-                        BackColor = Color.FromArgb(45, 45, 50)
+                        Text = "ATTACHED MEDIA",
+                        Font = new Font("Segoe UI Semibold", 7f),
+                        ForeColor = Color.DarkGray,
+                        Margin = new Padding(0, 0, 0, 5),
+                        AutoSizeMode = LabelAutoSizeMode.Default
                     };
+                    pnlImages.SetFlowBreak(lblHeader, true);
+                    pnlImages.Controls.Add(lblHeader);
                     
-                    // Tooltip for instructions
-                    var toolTip = new ToolTip();
-                    toolTip.SetToolTip(pic, "Click: View | Right-Click: Remove");
-                    
-                    pic.MouseClick += (s, e) =>
+                    foreach (var imagePath in _currentNote.ImagePaths)
                     {
-                        if (e.Button == MouseButtons.Right && _currentNote != null)
+                        if (!File.Exists(imagePath)) continue;
+                        
+                        try
                         {
-                            if (XtraMessageBox.Show("Remove this image reference?", "Confirm", 
-                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                            var pic = new PictureBox
                             {
-                                _currentNote.ImagePaths.Remove(imagePath);
-                                RefreshImages();
-                            }
+                                Size = new Size(140, 105), // Consistent 4:3 aspect ratio
+                                SizeMode = PictureBoxSizeMode.Zoom,
+                                Image = Image.FromFile(imagePath),
+                                Margin = new Padding(0, 0, 15, 0),
+                                Cursor = Cursors.Hand,
+                                Tag = imagePath,
+                                BorderStyle = BorderStyle.FixedSingle,
+                                BackColor = Color.FromArgb(245, 245, 250)
+                            };
+                            
+                            // Tooltip for instructions
+                            var toolTip = new ToolTip();
+                            toolTip.SetToolTip(pic, "Click: View | Right-Click: Remove");
+                            
+                            pic.MouseClick += (s, e) =>
+                            {
+                                if (e.Button == MouseButtons.Right && _currentNote != null)
+                                {
+                                    if (XtraMessageBox.Show("Remove this image reference?", "Confirm", 
+                                        MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                                    {
+                                        _currentNote.ImagePaths.Remove(imagePath);
+                                        RefreshImages();
+                                    }
+                                }
+                                else if (e.Button == MouseButtons.Left)
+                                {
+                                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                                    {
+                                        FileName = imagePath,
+                                        UseShellExecute = true
+                                    });
+                                }
+                            };
+                            
+                            pnlImages.Controls.Add(pic);
                         }
-                        else if (e.Button == MouseButtons.Left)
+                        catch (Exception ex)
                         {
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                            {
-                                FileName = imagePath,
-                                UseShellExecute = true
-                            });
+                            _logger.Error(ex, "Failed to load image: {Path}", imagePath);
                         }
-                    };
-                    
-                    pnlImages.Controls.Add(pic);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "Failed to load image: {Path}", imagePath);
-                }
+            }
+            finally
+            {
+                tableEditor.ResumeLayout(true);
+                tableEditor.PerformLayout();
             }
         }
         private void ApplyTheme()
         {
-            Color darkBg = Color.FromArgb(20, 20, 25);
-            Color panelBg = Color.FromArgb(25, 25, 30);
-            Color textWhite = Color.WhiteSmoke;
+            Color lightBg = Color.FromArgb(250, 250, 255);
+            Color panelBg = Color.FromArgb(240, 242, 245);
+            Color textDark = Color.FromArgb(30, 30, 30);
 
             // 1. Main Background
-            this.Appearance.BackColor = darkBg;
+            this.Appearance.BackColor = lightBg;
             this.Appearance.Options.UseBackColor = true;
 
-            // 2. Split Container (if accessible)
+            // 2. Split Container
             if (splitMain != null)
             {
-                splitMain.Appearance.BackColor = darkBg;
+                splitMain.Appearance.BackColor = Color.FromArgb(220, 220, 225);
                 splitMain.Appearance.Options.UseBackColor = true;
             }
 
@@ -694,7 +610,7 @@ namespace KeganOS.Views
                 pnlNotesList.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
                 pnlNotesList.Appearance.BackColor = panelBg;
                 pnlNotesList.Appearance.Options.UseBackColor = true;
-                pnlNotesList.AppearanceCaption.ForeColor = textWhite;
+                pnlNotesList.AppearanceCaption.ForeColor = textDark;
                 pnlNotesList.BorderStyle = BorderStyles.NoBorder;
             }
 
@@ -703,9 +619,9 @@ namespace KeganOS.Views
             {
                 pnlEditor.LookAndFeel.UseDefaultLookAndFeel = false;
                 pnlEditor.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
-                pnlEditor.Appearance.BackColor = darkBg;
+                pnlEditor.Appearance.BackColor = lightBg;
                 pnlEditor.Appearance.Options.UseBackColor = true;
-                pnlEditor.AppearanceCaption.ForeColor = textWhite;
+                pnlEditor.AppearanceCaption.ForeColor = textDark;
                 pnlEditor.BorderStyle = BorderStyles.NoBorder;
                 pnlEditor.ShowCaption = false; 
             }
@@ -713,15 +629,15 @@ namespace KeganOS.Views
             // 5. Editors
             if (txtTitle != null)
             {
-                txtTitle.Properties.Appearance.BackColor = darkBg;
-                txtTitle.Properties.Appearance.ForeColor = textWhite;
+                txtTitle.Properties.Appearance.BackColor = lightBg;
+                txtTitle.Properties.Appearance.ForeColor = textDark;
                 txtTitle.Properties.BorderStyle = BorderStyles.NoBorder;
             }
 
             if (txtContent != null)
             {
-                txtContent.Properties.Appearance.BackColor = darkBg;
-                txtContent.Properties.Appearance.ForeColor = textWhite;
+                txtContent.Properties.Appearance.BackColor = lightBg;
+                txtContent.Properties.Appearance.ForeColor = textDark;
                 txtContent.Properties.BorderStyle = BorderStyles.NoBorder;
             }
 
@@ -736,9 +652,34 @@ namespace KeganOS.Views
             // 7. Search Box
             if (txtSearch != null)
             {
-                txtSearch.Properties.Appearance.BackColor = Color.FromArgb(40, 40, 45);
-                txtSearch.Properties.Appearance.ForeColor = textWhite;
+                txtSearch.Properties.Appearance.BackColor = Color.White;
+                txtSearch.Properties.Appearance.ForeColor = textDark;
                 txtSearch.Properties.BorderStyle = BorderStyles.Simple;
+            }
+
+            // 9. Buttons
+            if (btnSave != null)
+            {
+                btnSave.Appearance.ForeColor = Color.FromArgb(0, 120, 215);
+            }
+
+
+            // 11. Header Label
+            if (lblTitle != null)
+            {
+                lblTitle.ForeColor = textDark;
+            }
+
+            // 12. Layout Table
+            if (tableEditor != null)
+            {
+                tableEditor.BackColor = lightBg;
+            }
+
+            // 13. Images Gallery
+            if (pnlImages != null)
+            {
+                pnlImages.BackColor = lightBg;
             }
         }
     }

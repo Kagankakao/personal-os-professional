@@ -92,7 +92,6 @@ public partial class MainDashboardForm : FluentDesignForm
         else if (e.Element == aceJournal) ShowView<Views.JournalControl>();
         else if (e.Element == aceAchievements) ShowView<Views.AchievementsControl>();
         else if (e.Element == aceAnalytics) ShowView<Views.AnalyticsControl>();
-        else if (e.Element == aceThemes) ShowView<Views.ThemeControl>();
         else if (e.Element == aceSettings) ShowView<Views.SettingsControl>();
     }
 
@@ -149,7 +148,6 @@ public partial class MainDashboardForm : FluentDesignForm
             case "Daily Journal": ShowView<Views.JournalControl>(); break;
             case "Achievements": ShowView<Views.AchievementsControl>(); break;
             case "Analytics": ShowView<Views.AnalyticsControl>(); break;
-            case "Theme Palace": ShowView<Views.ThemeControl>(); break;
             case "Settings": ShowView<Views.SettingsControl>(); break;
             default: _logger.Warning("Unknown module: {ModuleName}", moduleName); break;
         }

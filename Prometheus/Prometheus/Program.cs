@@ -138,6 +138,5 @@ static class Program
         services.AddTransient<AchievementsControl>();
         services.AddTransient<AnalyticsControl>();
         services.AddTransient<SettingsControl>();
-        services.AddTransient<ThemeControl>();
     }
 }

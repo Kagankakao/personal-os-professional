@@ -21,7 +21,6 @@ namespace KeganOS.Views
         private User? _currentUser;
         private List<JournalEntry> _entries = new();
         private int _hoverIndex = -1;
-        private System.Windows.Forms.Timer _tmrRefresh;
 
         public JournalControl(IJournalService journalService, IUserService userService)
         {
@@ -30,7 +29,6 @@ namespace KeganOS.Views
             InitializeComponent();
             
             // Wire up events
-            this.btnSave.Click += BtnSave_Click;
             this.btnOpenNotepad.Click += BtnOpenNotepad_Click;
             
             // Glassmorphism Paint
@@ -50,10 +48,6 @@ namespace KeganOS.Views
                 listEntries.Invalidate();
             };
 
-            // Refresh timer for focus metric
-            _tmrRefresh = new System.Windows.Forms.Timer { Interval = 1000 };
-            _tmrRefresh.Tick += async (s, e) => await UpdateFocusMetricAsync();
-            _tmrRefresh.Start();
         }
 
         protected override async void OnLoad(EventArgs e)
@@ -88,7 +82,6 @@ namespace KeganOS.Views
                 }
                 
                 pnlTimeline.Text = $"Neural Echoes ({_entries.Count})";
-                await UpdateFocusMetricAsync();
             }
             catch (Exception ex)
             {
@@ -96,22 +89,6 @@ namespace KeganOS.Views
             }
         }
 
-        private async Task UpdateFocusMetricAsync()
-        {
-            if (_currentUser == null) return;
-            
-            // In a real scenario, this would come from a live counter or the DB
-            // For now, let's show the last entry's time if it's today
-            var todayEntry = _entries.FirstOrDefault(e => e.Date.Date == DateTime.Now.Date);
-            if (todayEntry != null && todayEntry.TimeWorked.HasValue)
-            {
-                lblFocusMetric.Text = $"{todayEntry.TimeWorked.Value:hh\\:mm\\:ss}";
-            }
-            else
-            {
-                lblFocusMetric.Text = "00:00:00";
-            }
-        }
 
         private async void BtnSave_Click(object sender, EventArgs e)
         {

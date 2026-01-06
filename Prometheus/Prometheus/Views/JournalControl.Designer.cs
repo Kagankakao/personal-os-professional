@@ -26,7 +26,6 @@ partial class JournalControl
         this.pnlEditFooter = new DevExpress.XtraEditors.PanelControl();
         this.btnOpenNotepad = new DevExpress.XtraEditors.SimpleButton();
         this.btnSave = new DevExpress.XtraEditors.SimpleButton();
-        this.lblFocusMetric = new DevExpress.XtraEditors.LabelControl();
         ((System.ComponentModel.ISupportInitialize)(this.pnlHeader)).BeginInit();
         this.pnlHeader.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)(this.splitContainerControl1)).BeginInit();
@@ -142,7 +141,6 @@ partial class JournalControl
 
         // pnlEditFooter
         this.pnlEditFooter.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-        this.pnlEditFooter.Controls.Add(this.lblFocusMetric);
         this.pnlEditFooter.Controls.Add(this.btnOpenNotepad);
         this.pnlEditFooter.Controls.Add(this.btnSave);
         this.pnlEditFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -151,16 +149,6 @@ partial class JournalControl
         this.pnlEditFooter.Size = new System.Drawing.Size(440, 50);
         this.pnlEditFooter.TabIndex = 2;
 
-        // lblFocusMetric
-        this.lblFocusMetric.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
-        this.lblFocusMetric.Appearance.ForeColor = System.Drawing.Color.DarkGreen;
-        this.lblFocusMetric.Appearance.Options.UseFont = true;
-        this.lblFocusMetric.Appearance.Options.UseForeColor = true;
-        this.lblFocusMetric.Location = new System.Drawing.Point(0, 15);
-        this.lblFocusMetric.Name = "lblFocusMetric";
-        this.lblFocusMetric.Size = new System.Drawing.Size(120, 15);
-        this.lblFocusMetric.TabIndex = 4;
-        this.lblFocusMetric.Text = "FOCUS: 00:00:00";
         // 
         // btnOpenNotepad
         this.btnOpenNotepad.Anchor = System.Windows.Forms.AnchorStyles.Right;
@@ -216,7 +204,6 @@ partial class JournalControl
     private DevExpress.XtraEditors.LabelControl lblTodayDate;
     private DevExpress.XtraEditors.MemoEdit txtEntry;
     private DevExpress.XtraEditors.PanelControl pnlEditFooter;
-    private DevExpress.XtraEditors.LabelControl lblFocusMetric;
     private DevExpress.XtraEditors.SimpleButton btnSave;
     private DevExpress.XtraEditors.SimpleButton btnOpenNotepad;
 }

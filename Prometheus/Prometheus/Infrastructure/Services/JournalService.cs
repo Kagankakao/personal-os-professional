@@ -382,7 +382,6 @@ public class JournalService : IJournalService
                     }
                     entryEndIndex++;
                 }
-                // Check if time line has a note beside it
                 var timeLine = lines[todayIndex + 1];
                 var hasInlineNote = timeLine.Contains(' ');  // If space exists, note is inline
                 var hasNotesBelow = entryEndIndex > todayIndex + 2;  // If lines exist below time line
@@ -391,15 +390,24 @@ public class JournalService : IJournalService
                 note = note.Replace("[Manual Log]", "").Trim();
                 if (!lines.Any(l => l.Contains(note)))  // Check if note already exists
                 {
-                    // Only add inline if NO notes exist at all (neither inline nor below)
-                    if (!hasInlineNote && !hasNotesBelow)
+                    // Capture existing inline note (text after the time string)
+                    var splitTimeLine = timeLine.Split(new[] { ' ' }, 2);
+                    var existingInlineText = splitTimeLine.Length > 1 ? splitTimeLine[1].Trim() : "";
+
+                    // Check if existing note is just a placeholder
+                    bool isPlaceholder = existingInlineText.Equals("What did you work on?", StringComparison.OrdinalIgnoreCase) ||
+                                         existingInlineText.Equals("What defines your day today?", StringComparison.OrdinalIgnoreCase);
+
+                    // Only add inline if NO notes exist at all (neither inline nor below) OR if it's just a placeholder
+                    if ((!hasInlineNote && !hasNotesBelow) || isPlaceholder)
                     {
-                        // No notes at all - add inline with time
-                        lines[todayIndex + 1] = timeLine + " " + note;
+                        // No notes at all OR overwriting placeholder - add inline with time
+                        // Ensure we rely on splitTimeLine[0] which is the time string
+                        lines[todayIndex + 1] = splitTimeLine[0] + " " + note;
                     }
                     else
                     {
-                        // Notes exist (inline or below) - append at end
+                        // Notes exist (inline or below) AND it's not a placeholder - append at end
                         lines.Insert(entryEndIndex, "");  // Blank line before new note
                         lines.Insert(entryEndIndex + 1, note);
                     }

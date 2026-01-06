@@ -32,7 +32,6 @@ partial class MainDashboardForm
         this.aceAchievements = new AccordionControlElement();
         this.aceAnalytics = new AccordionControlElement();
         this.aceSeparator = new AccordionControlSeparator();
-        this.aceThemes = new AccordionControlElement();
         this.aceSettings = new AccordionControlElement();
 
         ((System.ComponentModel.ISupportInitialize)(this.fluentDesignFormControl1)).BeginInit();
@@ -61,7 +60,6 @@ partial class MainDashboardForm
             this.aceAchievements,
             this.aceAnalytics,
             this.aceSeparator,
-            this.aceThemes,
             this.aceSettings
         });
         this.accordionControl1.Location = new System.Drawing.Point(0, 31);
@@ -100,9 +98,6 @@ partial class MainDashboardForm
 
         this.aceSeparator.Name = "aceSeparator";
 
-        this.aceThemes.Name = "aceThemes";
-        this.aceThemes.Style = ElementStyle.Item;
-        this.aceThemes.Text = "Theme Palace";
 
         this.aceSettings.Name = "aceSettings";
         this.aceSettings.Style = ElementStyle.Item;
@@ -148,6 +143,5 @@ partial class MainDashboardForm
     private AccordionControlElement aceAchievements;
     private AccordionControlElement aceAnalytics;
     private AccordionControlSeparator aceSeparator;
-    private AccordionControlElement aceThemes;
     private AccordionControlElement aceSettings;
 }
