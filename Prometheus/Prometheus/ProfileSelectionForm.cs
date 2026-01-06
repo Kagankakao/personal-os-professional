@@ -63,7 +63,8 @@ namespace KeganOS
                 // Element 0: Circular Avatar
                 var elImage = new TileItemElement();
                 elImage.ImageAlignment = TileItemContentAlignment.MiddleCenter;
-                elImage.ImageScaleMode = TileItemImageScaleMode.ZoomInside;
+                elImage.ImageScaleMode = TileItemImageScaleMode.Stretch;
+                elImage.ImageSize = new Size(80, 80);
                 
                 if (user.HasAvatar && System.IO.File.Exists(user.AvatarPath))
                 {
@@ -71,11 +72,13 @@ namespace KeganOS
                     {
                         using (var original = Image.FromFile(user.AvatarPath))
                         {
-                            elImage.Image = GetCircularImage(original, 80);
+                            // Generate at 2x resolution for high-quality downscaling
+                            elImage.Image = GetCircularImage(original, 160);
                         }
                     }
                     catch { /* Fallback to default or nothing */ }
                 }
+
                 
                 // Element 1: Display Name
                 var elText = new TileItemElement();
@@ -83,6 +86,16 @@ namespace KeganOS
                 elText.TextAlignment = TileItemContentAlignment.BottomCenter;
                 elText.Appearance.Normal.Font = new Font("Segoe UI Semibold", 10F);
                 
+                item.AppearanceItem.Normal.BackColor = Color.White;
+                item.AppearanceItem.Normal.ForeColor = Color.FromArgb(45, 45, 45);
+                item.AppearanceItem.Normal.BorderColor = Color.FromArgb(220, 220, 220);
+                item.AppearanceItem.Normal.Options.UseBackColor = true;
+                item.AppearanceItem.Normal.Options.UseForeColor = true;
+                item.AppearanceItem.Normal.Options.UseBorderColor = true;
+
+                item.AppearanceItem.Hovered.BackColor = Color.FromArgb(245, 245, 245);
+                item.AppearanceItem.Hovered.Options.UseBackColor = true;
+
                 item.Elements.Add(elImage);
                 item.Elements.Add(elText);
                 
@@ -91,13 +104,25 @@ namespace KeganOS
             
             // Add "Create New" item
             var newItem = new TileItem();
+            newItem.ItemSize = TileItemSize.Medium;
+            newItem.Tag = "NEW";
+
             var elNewText = new TileItemElement();
             elNewText.Text = "+ New Profile";
             elNewText.TextAlignment = TileItemContentAlignment.MiddleCenter;
+            elNewText.Appearance.Normal.Font = new Font("Segoe UI Semibold", 10F);
+            elNewText.Appearance.Normal.ForeColor = Color.FromArgb(0, 120, 212); // Blue accent
+            
             newItem.Elements.Add(elNewText);
             
-            newItem.ItemSize = TileItemSize.Medium;
-            newItem.Tag = "NEW";
+            newItem.AppearanceItem.Normal.BackColor = Color.White;
+            newItem.AppearanceItem.Normal.BorderColor = Color.FromArgb(220, 220, 220);
+            newItem.AppearanceItem.Normal.Options.UseBackColor = true;
+            newItem.AppearanceItem.Normal.Options.UseBorderColor = true;
+
+            newItem.AppearanceItem.Hovered.BackColor = Color.FromArgb(245, 245, 245);
+            newItem.AppearanceItem.Hovered.Options.UseBackColor = true;
+
             tileControl1.Groups[0].Items.Add(newItem);
         }
 
@@ -107,6 +132,8 @@ namespace KeganOS
             using (var g = Graphics.FromImage(bitmap))
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
                 g.Clear(Color.Transparent);
                 
                 using (var path = new System.Drawing.Drawing2D.GraphicsPath())
@@ -118,6 +145,7 @@ namespace KeganOS
             }
             return bitmap;
         }
+
 
         private async void tileControl1_ItemClick(object sender, TileItemEventArgs e)
         {

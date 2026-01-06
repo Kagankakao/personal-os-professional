@@ -26,16 +26,27 @@ static class Program
         // 1. Initialize Logging
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
-            .WriteTo.File("logs/prometheus-.log", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("logs/prometheus-.log", 
+                rollingInterval: RollingInterval.Day,
+                fileSizeLimitBytes: 10 * 1024 * 1024, // 10MB
+                retainedFileCountLimit: 5)
             .CreateLogger();
 
         // 2. DevExpress Visual Settings
+        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         
+        // Premium Rendering: Enable DirectX Hardware Acceleration
+        WindowsFormsSettings.ForceDirectXPaint();
+        WindowsFormsSettings.AllowPixelScrolling = DevExpress.Utils.DefaultBoolean.True;
+        WindowsFormsSettings.ScrollUIMode = ScrollUIMode.Touch;
+        WindowsFormsSettings.DefaultFont = new System.Drawing.Font("Segoe UI", 10F);
+        
         BonusSkins.Register();
         SkinManager.EnableFormSkins();
-        UserLookAndFeel.Default.SetSkinStyle("Office 2019 Black");
+        UserLookAndFeel.Default.SetSkinStyle(SkinStyle.WXICompact);
+
 
         // 3. Configure Host & DI
         _host = Host.CreateDefaultBuilder()
@@ -62,9 +73,24 @@ static class Program
                 var loginForm = scope.ServiceProvider.GetRequiredService<ProfileSelectionForm>();
                 if (loginForm.ShowDialog() == DialogResult.OK)
                 {
-                    var mainForm = scope.ServiceProvider.GetRequiredService<MainDashboardForm>();
-                    Application.Run(mainForm);
+                    DialogResult dashResult;
+                    do
+                    {
+                        var mainForm = scope.ServiceProvider.GetRequiredService<MainDashboardForm>();
+                        dashResult = mainForm.ShowDialog();
+                        
+                        // If Retry, user logged out - show profile selection again
+                        if (dashResult == DialogResult.Retry)
+                        {
+                            var reLoginForm = scope.ServiceProvider.GetRequiredService<ProfileSelectionForm>();
+                            if (reLoginForm.ShowDialog() != DialogResult.OK)
+                            {
+                                break; // User cancelled, exit app
+                            }
+                        }
+                    } while (dashResult == DialogResult.Retry);
                 }
+
             }
         }
         catch (Exception ex)

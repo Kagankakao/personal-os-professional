@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Linq;
 using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
+using KeganOS.Infrastructure.Data;
 using Serilog;
 using System.Diagnostics;
 using System.Globalization;
@@ -15,18 +19,52 @@ namespace KeganOS.Infrastructure.Services;
 public class JournalService : IJournalService
 {
     private readonly ILogger _logger = Log.ForContext<JournalService>();
+    private readonly IPrometheusService _prometheusService;
+    private readonly AppDbContext _db;
     private readonly string _kegomoDoroPath;
 
-    public JournalService()
+    public JournalService(IPrometheusService prometheusService, AppDbContext db)
     {
-        _kegomoDoroPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "kegomodoro");
-        _logger.Debug("KEGOMODORO base path: {Path}", _kegomoDoroPath);
+        _prometheusService = prometheusService;
+        _db = db;
+        _kegomoDoroPath = FindKegomoDoroPath();
+        _logger.Debug("KEGOMODORO base path resolved to: {Path}", _kegomoDoroPath);
+    }
+
+    private string FindKegomoDoroPath()
+    {
+        var currentDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        for (int i = 0; i < 7; i++)
+        {
+            if (currentDir == null) break;
+            
+            // Check for kegomodoro folder
+            var potential = Path.Combine(currentDir.FullName, "kegomodoro");
+            if (Directory.Exists(potential)) return potential;
+            
+            // Check for personal-os/kegomodoro pattern
+            var potentialNested = Path.Combine(currentDir.FullName, "personal-os", "kegomodoro");
+            if (Directory.Exists(potentialNested)) return potentialNested;
+
+            currentDir = currentDir.Parent;
+        }
+        // Fallback to relative if not found (default dev header)
+        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "kegomodoro");
     }
 
     public string GetJournalFilePath(User user)
     {
-        var path = Path.Combine(_kegomoDoroPath, "dependencies", "texts", user.JournalFileName);
+        // Path: dependencies/texts/Users/[DisplayName]/[JournalFileName]
+        var path = Path.Combine(_kegomoDoroPath, "dependencies", "texts", "Users", user.DisplayName, user.JournalFileName);
         _logger.Debug("Journal file path for user {User}: {Path}", user.DisplayName, path);
+        
+        // Ensure directory exists
+        var dir = Path.GetDirectoryName(path);
+        if (dir != null && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+        
         return path;
     }
 
@@ -207,6 +245,10 @@ public class JournalService : IJournalService
                 await File.AppendAllTextAsync(filePath, entry);
                 _logger.Information("New entry appended for {Date}", dateStr);
             }
+
+            // Sync to Database and Analyze Mood (Fire and forget or awaited depending on preference)
+            // We await it here to ensure data integrity
+            await SyncToDatabaseAsync(user, today, finalTime, note);
         }
         catch (Exception ex)
         {
@@ -358,11 +400,47 @@ public class JournalService : IJournalService
                 await File.AppendAllTextAsync(filePath, entry);
                 _logger.Information("New note-only entry created for {Date}", dateStrSlash);
             }
+
+            // Sync to Database and Analyze Mood
+            await SyncToDatabaseAsync(user, today, null, note);
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to save note-only entry");
             throw;
+        }
+    }
+
+    private async Task SyncToDatabaseAsync(User user, DateTime date, TimeSpan? timeWorked, string note)
+    {
+        try
+        {
+            _logger.Information("Syncing entry to Database for user {User}", user.DisplayName);
+            
+            // 1. Analyze Mood
+            var mood = await _prometheusService.AnalyzeMoodAsync(note);
+            _logger.Debug("Mood detected for entry: {Mood}", mood);
+
+            // 2. Save to JournalEntries table
+            using var connection = _db.GetConnection();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO JournalEntries (UserId, Date, TimeWorked, NoteText, RawText, MoodDetected)
+                VALUES (@userId, @date, @time, @note, @raw, @mood)
+            ";
+            command.Parameters.AddWithValue("@userId", user.Id);
+            command.Parameters.AddWithValue("@date", date.ToString("yyyy-MM-dd"));
+            command.Parameters.AddWithValue("@time", timeWorked?.ToString(@"hh\:mm\:ss") ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@note", note);
+            command.Parameters.AddWithValue("@raw", note); // For now, raw is just the note
+            command.Parameters.AddWithValue("@mood", mood);
+            
+            await command.ExecuteNonQueryAsync();
+            _logger.Information("Journal entry synced to database successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to sync journal entry to database");
         }
     }
 

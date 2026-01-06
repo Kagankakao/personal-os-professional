@@ -1,0 +1,15 @@
+  Determining projects to restore...
+  Restored C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj (in 549 ms).
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\DashboardControl.cs(7,7): warning CS0105: The using directive for 'KeganOS.Core.Models' appeared previously in this namespace [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\ChatControl.cs(30,17): error CS0104: 'Timer' is an ambiguous reference between 'System.Windows.Forms.Timer' and 'System.Threading.Timer' [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+
+Build FAILED.
+
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\DashboardControl.cs(7,7): warning CS0105: The using directive for 'KeganOS.Core.Models' appeared previously in this namespace [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Views\ChatControl.cs(30,17): error CS0104: 'Timer' is an ambiguous reference between 'System.Windows.Forms.Timer' and 'System.Threading.Timer' [C:\Users\ariba\OneDrive\Documenti\Software Projects\AI Projects\personal-os\personal-os\personal-os-devexpress\Prometheus\Prometheus\Prometheus.csproj]
+    1 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.97
+
+Workload updates are available. Run `dotnet workload list` for more information.

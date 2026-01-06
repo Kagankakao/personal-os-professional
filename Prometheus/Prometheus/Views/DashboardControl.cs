@@ -4,9 +4,10 @@ using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
-using KeganOS.Core.Models;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
+using System.Drawing;
+using System.Threading.Tasks;
 
 namespace KeganOS.Views
 {
@@ -23,6 +24,9 @@ namespace KeganOS.Views
         
         private string _journeyText = "";
         private int _streamIndex = 0;
+        private System.Windows.Forms.Timer tmrXPBarGlow;
+        private int _glowIntensity = 0;
+        private bool _glowIncreasing = true;
 
         public DashboardControl(IUserService userService, IMotivationalMessageService motivationService, 
             IPixelaService pixelaService, IAnalyticsService analyticsService, 
@@ -82,6 +86,20 @@ namespace KeganOS.Views
             // Ensure transparency
             progressHeatmapLoading.Appearance.BackColor = System.Drawing.Color.Transparent;
             progressHeatmapLoading.Appearance.Options.UseBackColor = true;
+
+            // Initialize XP Bar Glow Timer
+            tmrXPBarGlow = new System.Windows.Forms.Timer();
+            tmrXPBarGlow.Interval = 50;
+            tmrXPBarGlow.Tick += (s, e) => {
+                if (_glowIncreasing) _glowIntensity += 5;
+                else _glowIntensity -= 5;
+
+                if (_glowIntensity >= 255) _glowIncreasing = false;
+                if (_glowIntensity <= 100) _glowIncreasing = true;
+
+                progressXP.Properties.EndColor = Color.FromArgb(255, _glowIntensity, 0);
+            };
+            tmrXPBarGlow.Start();
         }
 
         private void BtnStart_Click(object? sender, EventArgs e)
@@ -123,14 +141,79 @@ namespace KeganOS.Views
             {
                 var user = await _userService.GetCurrentUserAsync();
                 if (user == null) return;
+
+                // Create professional dialog programmatically
+                using var dlg = new XtraForm();
+                dlg.Text = "Log Offline Focus";
+                dlg.Size = new System.Drawing.Size(350, 240);
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+
+                // Controls
+                var lblHours = new LabelControl { Text = "Hours", Location = new System.Drawing.Point(20, 20) };
+                var spinHours = new SpinEdit { Location = new System.Drawing.Point(20, 40), Size = new System.Drawing.Size(140, 30) };
+                spinHours.Properties.MinValue = 0;
+                spinHours.Properties.MaxValue = 23;
+                spinHours.Value = 1;
+
+                var lblMinutes = new LabelControl { Text = "Minutes", Location = new System.Drawing.Point(180, 20) };
+                var spinMinutes = new SpinEdit { Location = new System.Drawing.Point(180, 40), Size = new System.Drawing.Size(140, 30) };
+                spinMinutes.Properties.MinValue = 0;
+                spinMinutes.Properties.MaxValue = 59;
+                spinMinutes.Value = 0;
+
+                var lblNote = new LabelControl { Text = "Activity Note (Optional)", Location = new System.Drawing.Point(20, 80) };
+                var txtNote = new TextEdit { Location = new System.Drawing.Point(20, 100), Size = new System.Drawing.Size(300, 30) };
+                txtNote.Properties.NullText = "E.g. Reading, Deep Work...";
+
+                var btnSave = new SimpleButton { Text = "Log Time", Location = new System.Drawing.Point(180, 150), Size = new System.Drawing.Size(140, 35) };
+                btnSave.DialogResult = DialogResult.OK;
+                // Style the save button
+                btnSave.Appearance.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+                btnSave.Appearance.ForeColor = Color.FromArgb(76, 175, 80); // Green
                 
-                string result = XtraInputBox.Show("Enter hours to log (e.g. 1.5):", "Log Manual Time", "0");
-                if (double.TryParse(result, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double hours) && hours > 0)
+                var btnCancel = new SimpleButton { Text = "Cancel", Location = new System.Drawing.Point(20, 150), Size = new System.Drawing.Size(140, 35) };
+                btnCancel.DialogResult = DialogResult.Cancel;
+
+                dlg.Controls.AddRange(new Control[] { lblHours, spinHours, lblMinutes, spinMinutes, lblNote, txtNote, btnSave, btnCancel });
+                dlg.AcceptButton = btnSave;
+                dlg.CancelButton = btnCancel;
+
+                if (dlg.ShowDialog() == DialogResult.OK)
                 {
-                    bool success = await _analyticsService.AddManualTimeAsync(user, hours);
+                    double totalHours = (double)spinHours.Value + ((double)spinMinutes.Value / 60.0);
+                    
+                    if (totalHours <= 0)
+                    {
+                        XtraMessageBox.Show("Time must be greater than zero.", "Invalid Entry", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // 1. Update Stats
+                    bool success = await _analyticsService.AddManualTimeAsync(user, totalHours);
+                    
+                    // 2. Log to Journal (Best Practice)
+                    try 
+                    {
+                        using var scope = _serviceProvider.CreateScope();
+                        var journalService = scope.ServiceProvider.GetService<IJournalService>();
+                        if (journalService != null)
+                        {
+                            string note = txtNote.Text.Trim();
+                            if (string.IsNullOrEmpty(note)) note = "Manual Offline Focus";
+                            await journalService.AppendEntryAsync(user, $"[Manual Log] {note}", TimeSpan.FromHours(totalHours));
+                        }
+                    }
+                    catch (Exception jEx) 
+                    {
+                        _logger.Warning(jEx, "Failed to append manual log to text journal");
+                    }
+
                     if (success)
                     {
-                        XtraMessageBox.Show($"Successfully logged {hours} hours!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        XtraMessageBox.Show($"Successfully logged {totalHours:F2} hours!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         await RefreshStatsAsync();
                         await RefreshPixelaHeatmapAsync();
                     }
@@ -248,6 +331,36 @@ namespace KeganOS.Views
             await RefreshPixelaHeatmapAsync();
             await LoadBrandingImageAsync();
             await StartJourneyStreamingAsync();
+
+            // Glassmorphism logic for Motivation Panel
+            pnlMotivation.Paint += (s, pe) => {
+                var g = pe.Graphics;
+                var rect = pnlMotivation.ClientRectangle;
+                rect.Height = 40; // Header area
+                
+                // Semi-transparent glass background
+                using var brush = new SolidBrush(Color.FromArgb(40, 255, 255, 255));
+                g.FillRectangle(brush, rect);
+                
+                // Bottom border line for the header
+                using var pen = new Pen(Color.FromArgb(60, 255, 255, 255), 1);
+                g.DrawLine(pen, 0, 39, pnlMotivation.Width, 39);
+                
+                // Title
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                using var titleFont = new Font("Segoe UI Semibold", 9);
+                g.DrawString("KEGANOS • PERSONAL JOURNEY STREAM", titleFont, Brushes.Cyan, new PointF(15, 12));
+
+                // Mental Health Indicator (Right aligned)
+                var moodRect = new Rectangle(pnlMotivation.Width - 180, 15, 120, 10);
+                g.FillRectangle(new SolidBrush(Color.FromArgb(50, 0, 0, 0)), moodRect);
+                
+                var moodValRect = new Rectangle(moodRect.X, moodRect.Y, 90, 10); // 75% mood
+                using var moodFill = new System.Drawing.Drawing2D.LinearGradientBrush(moodValRect, Color.Lime, Color.SpringGreen, 0f);
+                g.FillRectangle(moodFill, moodValRect);
+
+                g.DrawString("MOOD: STABLE", new Font("Segoe UI", 7, FontStyle.Bold), Brushes.White, new PointF(moodRect.Right + 5, 12));
+            };
         }
 
         private async System.Threading.Tasks.Task LoadBrandingImageAsync()
@@ -319,48 +432,60 @@ namespace KeganOS.Views
             }
         }
 
-        public async System.Threading.Tasks.Task RefreshStatsAsync()
+        public async Task RefreshStatsAsync()
         {
             try
             {
                 var user = await _userService.GetCurrentUserAsync();
-                if (user != null)
-                {
-                    // Level & XP
-                    lblLevelText.Text = $"Level {user.Level} • {user.XpInCurrentLevel}/{user.XpRequiredForLevel} XP";
-                    progressXP.Position = (int)(user.LevelProgress * 100);
-                    lblLevelText.Appearance.ForeColor = System.Drawing.ColorTranslator.FromHtml(user.DisplayLevelColor);
+                if (user == null) return;
 
-                    // Today/Week Stats from Analytics
-                    var weeklyData = await _analyticsService.GetWeeklyDataAsync(user, DateTime.Today);
-                    double weekTotal = 0;
-                    double todayTotal = 0;
-                    
-                    foreach (var kvp in weeklyData)
-                    {
-                        weekTotal += kvp.Value;
-                        if (kvp.Key == DateTime.Today.DayOfWeek)
-                        {
-                            todayTotal = kvp.Value;
-                        }
-                    }
+                // Level & XP
+                lblLevelText.Text = $"Level {user.Level} • {user.XP % 100}/100 XP";
+                progressXP.Position = (int)(user.XP % 100);
+                progressXP.Properties.StartColor = Color.FromArgb(192, 0, 0); // Imperial Crimson
+                progressXP.Properties.EndColor = Color.FromArgb(255, 69, 0);
 
-                    lblTodayValue.Text = $"{todayTotal:F1} hrs";
-                    lblWeekValue.Text = $"{weekTotal:F1} hrs";
-                    lblTotalValue.Text = $"{user.TotalHours:F1} hrs";
-                    
-                    // Streak
-                    int streak = await _analyticsService.CalculateCurrentStreakAsync(user);
-                    lblStreakValue.Text = $"{streak} days";
-                    lblBestValue.Text = $"{Math.Max(streak, user.BestStreak)} days";
-                    
-                    _logger.Debug("Stats refreshed for user {User}", user.DisplayName);
-                }
+                // Fetch latest data (Streak & Weekly)
+                var streak = await _analyticsService.CalculateCurrentStreakAsync(user);
+                var weeklyData = await _analyticsService.GetWeeklyDataAsync(user, DateTime.Today);
+                
+                var todayHours = weeklyData.ContainsKey(DateTime.Today.DayOfWeek) ? weeklyData[DateTime.Today.DayOfWeek] : 0;
+                var weekHours = weeklyData.Values.Sum();
+
+                // Update Tiles
+                UpdateTile(tileItemToday, "TODAY", $"{todayHours:F1}", "HRS");
+                UpdateTile(tileItemWeek, "WEEK", $"{weekHours:F1}", "HRS");
+                UpdateTile(tileItemTotal, "TOTAL", $"{user.TotalHours:F0}", "HRS");
+                UpdateTile(tileItemStreak, "STREAK", $"{streak}", "DAYS");
+                
+                _logger.Debug("Stats refreshed for user {User}", user.DisplayName);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to refresh stats");
             }
+        }
+
+        private void UpdateTile(TileItem item, string title, string value, string unit)
+        {
+            item.Elements.Clear();
+            
+            // Value
+            var elValue = new TileItemElement { Text = value, TextAlignment = TileItemContentAlignment.MiddleCenter };
+            elValue.Appearance.Normal.Font = new Font("Segoe UI Light", 28);
+            item.Elements.Add(elValue);
+
+            // Title
+            var elTitle = new TileItemElement { Text = title, TextAlignment = TileItemContentAlignment.TopLeft };
+            elTitle.Appearance.Normal.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            elTitle.Appearance.Normal.ForeColor = Color.FromArgb(200, 255, 255, 255);
+            item.Elements.Add(elTitle);
+
+            // Unit
+            var elUnit = new TileItemElement { Text = unit, TextAlignment = TileItemContentAlignment.BottomRight };
+            elUnit.Appearance.Normal.Font = new Font("Segoe UI", 8, FontStyle.Italic);
+            elUnit.Appearance.Normal.ForeColor = Color.FromArgb(150, 255, 255, 255);
+            item.Elements.Add(elUnit);
         }
 
         private async System.Threading.Tasks.Task RefreshPixelaHeatmapAsync()

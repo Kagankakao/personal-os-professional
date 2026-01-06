@@ -23,8 +23,8 @@ partial class AchievementsControl
         // tileControlAchievements
         // 
         this.tileControlAchievements.AllowDrag = false;
-        this.tileControlAchievements.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
-        this.tileControlAchievements.AppearanceItem.Normal.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(50)))), ((int)(((byte)(50)))));
+        this.tileControlAchievements.AppearanceItem.Normal.BackColor = System.Drawing.Color.White;
+        this.tileControlAchievements.AppearanceItem.Normal.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
         this.tileControlAchievements.AppearanceItem.Normal.Options.UseBackColor = true;
         this.tileControlAchievements.AppearanceItem.Normal.Options.UseBorderColor = true;
         this.tileControlAchievements.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -45,20 +45,24 @@ partial class AchievementsControl
         // 
         // lblTitle
         // 
-        this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold);
+        this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 20F, System.Drawing.FontStyle.Bold);
+        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.FromArgb(20, 20, 20);
         this.lblTitle.Appearance.Options.UseFont = true;
+        this.lblTitle.Appearance.Options.UseForeColor = true;
         this.lblTitle.Dock = System.Windows.Forms.DockStyle.Top;
         this.lblTitle.Location = new System.Drawing.Point(20, 20);
         this.lblTitle.Name = "lblTitle";
-        this.lblTitle.Padding = new System.Windows.Forms.Padding(0, 0, 0, 10);
-        this.lblTitle.Size = new System.Drawing.Size(155, 42);
+        this.lblTitle.Padding = new System.Windows.Forms.Padding(10, 5, 0, 15);
+        this.lblTitle.Size = new System.Drawing.Size(250, 60);
         this.lblTitle.TabIndex = 1;
         this.lblTitle.Text = "Hall of Fame";
+        this.lblTitle.BackColor = System.Drawing.Color.Transparent;
         // 
         // AchievementsControl
         // 
         this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+        this.BackColor = System.Drawing.Color.FromArgb(248, 249, 250);
         this.Controls.Add(this.tileControlAchievements);
         this.Controls.Add(this.lblTitle);
         this.Name = "AchievementsControl";

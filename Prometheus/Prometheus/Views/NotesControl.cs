@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
+using DevExpress.XtraEditors.Controls;
 using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
 using Serilog;
@@ -20,6 +22,12 @@ namespace KeganOS.Views
         private List<NoteItem> _notes = new();
         private List<NoteItem> _filteredNotes = new();
         private readonly string _imagesFolder;
+        
+        // Animation & UI state
+        private System.Windows.Forms.Timer _tmrPulse;
+        private float _pulseOpacity = 0.5f;
+        private bool _pulseIncreasing = true;
+        private int _hoverIndex = -1;
 
         public NotesControl(INoteService noteService, IUserService userService)
         {
@@ -57,6 +65,38 @@ namespace KeganOS.Views
             // Add Image button click
             this.lblDropHint.Click += LblDropHint_Click;
             this.lblDropHint.Cursor = Cursors.Hand;
+
+            // Glassmorphism Paint
+            this.pnlHeader.Paint += PnlHeader_Paint;
+            
+            // Custom Card Draw
+            this.listNotes.DrawItem += ListNotes_DrawItem;
+            this.listNotes.MouseMove += (s, e) => {
+                var index = listNotes.IndexFromPoint(e.Location);
+                if (index != _hoverIndex) {
+                    _hoverIndex = index;
+                    listNotes.Invalidate();
+                }
+            };
+            this.listNotes.MouseLeave += (s, e) => {
+                _hoverIndex = -1;
+                listNotes.Invalidate();
+            };
+
+            // Neural Sync Pulse
+            _tmrPulse = new System.Windows.Forms.Timer { Interval = 50 };
+            _tmrPulse.Tick += (s, e) => {
+                if (_pulseIncreasing) _pulseOpacity += 0.05f;
+                else _pulseOpacity -= 0.05f;
+
+                if (_pulseOpacity >= 1.0f) _pulseIncreasing = false;
+                if (_pulseOpacity <= 0.3f) _pulseIncreasing = true;
+                
+                pnlEditorFooter.Invalidate();
+            };
+            _tmrPulse.Start();
+
+            this.pnlEditorFooter.Paint += PnlEditorFooter_Paint;
         }
 
         protected override async void OnLoad(EventArgs e)
@@ -99,17 +139,14 @@ namespace KeganOS.Views
                     .ToList();
             }
             
-            // Update listbox with formatted items
             listNotes.Items.Clear();
             foreach (var note in _filteredNotes)
             {
-                string date = note.LastModified.ToString("MMM d");
-                string preview = string.IsNullOrEmpty(note.Content) ? "" : 
-                    (note.Content.Length > 40 ? note.Content.Substring(0, 37) + "..." : note.Content);
-                listNotes.Items.Add($"{note.Title}\n{date} • {preview}");
+                // We add the object itself, or a dummy string since we use CustomDrawItem
+                listNotes.Items.Add(note);
             }
             
-            pnlNotesList.Text = $"Notes ({_filteredNotes.Count})";
+            pnlNotesList.Text = $"Neural Echoes ({_filteredNotes.Count})";
         }
 
         private void TxtSearch_EditValueChanged(object? sender, EventArgs e)
@@ -128,10 +165,12 @@ namespace KeganOS.Views
                 UpdateLastSaved();
                 RefreshImages();
                 
-                // Ensure editor is ready and focused
+                // Focus logic
                 txtContent.Focus();
                 if (txtContent.Text.Length > 0)
                     txtContent.SelectionStart = txtContent.Text.Length;
+                
+                txtTitle.Properties.Appearance.Font = new Font("Segoe UI Light", 24F);
             }
         }
 
@@ -254,6 +293,101 @@ namespace KeganOS.Views
             {
                 lblLastSaved.Text = "";
             }
+        }
+
+        private void PnlHeader_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = pnlHeader.ClientRectangle;
+
+            // Glass Background (Simulated)
+            using (var brush = new LinearGradientBrush(rect, 
+                Color.FromArgb(60, 255, 255, 255), 
+                Color.FromArgb(10, 255, 255, 255), 45f))
+            {
+                g.FillRectangle(brush, rect);
+            }
+
+            // Accent Line (Bottom)
+            using (var pen = new Pen(Color.FromArgb(100, 0, 255, 255), 2)) // Cyan glow
+            {
+                g.DrawLine(pen, 0, rect.Height - 1, rect.Width, rect.Height - 1);
+            }
+
+            // Particle effect hint (static for now)
+            g.FillEllipse(Brushes.Cyan, rect.Width - 100, 15, 4, 4);
+            g.FillEllipse(Brushes.DeepSkyBlue, rect.Width - 120, 25, 3, 3);
+        }
+
+        private void ListNotes_DrawItem(object sender, ListBoxDrawItemEventArgs e)
+        {
+            if (e.Index < 0 || e.Index >= _filteredNotes.Count) return;
+            
+            var note = _filteredNotes[e.Index];
+            var isSelected = (e.State & DrawItemState.Selected) != 0;
+            var isHovered = e.Index == _hoverIndex;
+            
+            // 1. Draw Background Card
+            var rect = e.Bounds;
+            rect.Inflate(-5, -5);
+
+            Color bgColor = Color.FromArgb(30, 30, 35);
+            if (isSelected) bgColor = Color.FromArgb(45, 0, 150, 150); // Muted Cyan
+            else if (isHovered) bgColor = Color.FromArgb(40, 40, 45);
+
+            e.Cache.FillRectangle(bgColor, rect);
+
+            // Selection Edge
+            if (isSelected)
+            {
+                e.Cache.DrawLine(new Pen(Color.Cyan, 2), new Point(rect.X, rect.Y), new Point(rect.X, rect.Bottom));
+            }
+
+            // 2. Draw Text (Title)
+            using (var fontTitle = new Font("Segoe UI Semibold", 11))
+            {
+                e.Cache.DrawString(note.Title ?? "Untitled", fontTitle, Brushes.White, rect.X + 15, rect.Y + 12);
+            }
+
+            // 3. Draw Subtext (Date & Preview)
+            string dateStr = note.LastModified.ToString("MMM d, HH:mm");
+            string previewText = note.Content?.Replace("\r", "").Replace("\n", " ") ?? "";
+            if (previewText.Length > 35) previewText = previewText.Substring(0, 32) + "...";
+
+            using (var fontSmall = new Font("Segoe UI", 8.5f))
+            {
+                e.Cache.DrawString(dateStr, fontSmall, Brushes.Gray, rect.X + 15, rect.Y + 35);
+                e.Cache.DrawString(previewText, fontSmall, Brushes.Silver, rect.X + 15, rect.Y + 55);
+
+                // Pinned indicator
+                if (note.IsPinned)
+                {
+                    e.Cache.DrawString("★", fontSmall, Brushes.Gold, rect.Right - 25, rect.Y + 12);
+                }
+            }
+
+            e.Handled = true;
+        }
+
+        private void PnlEditorFooter_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            var rect = pnlEditorFooter.ClientRectangle;
+            
+            // "Neural Mesh Synced" Indicator
+            int dotX = 350;
+            int dotY = 22;
+            int alpha = (int)(_pulseOpacity * 255);
+            
+            using (var pulseBrush = new SolidBrush(Color.FromArgb(alpha, 0, 255, 127))) // Spring Green
+            {
+                g.FillEllipse(pulseBrush, dotX, dotY, 8, 8);
+            }
+            
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            using var font = new Font("Segoe UI", 7, FontStyle.Bold);
+            g.DrawString("NEURAL MESH SYNCED", font, Brushes.Gray, dotX + 15, dotY - 2);
         }
 
         // ═══════════════════════════════════════════════════════════════════

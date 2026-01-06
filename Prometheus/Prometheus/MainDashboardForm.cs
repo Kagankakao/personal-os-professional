@@ -39,6 +39,25 @@ public partial class MainDashboardForm : FluentDesignForm
             if (user != null)
             {
                 this.Text = $"Prometheus - {user.DisplayName}";
+                
+                // Initialize AI Services if key is present
+                if (!string.IsNullOrEmpty(user.GeminiApiKey))
+                {
+                    try
+                    {
+                        var aiProvider = _serviceProvider.GetRequiredService<IAIProvider>();
+                        aiProvider.Configure(user.GeminiApiKey);
+                        
+                        var prometheus = _serviceProvider.GetRequiredService<IPrometheusService>();
+                        prometheus.SetApiKey(user.GeminiApiKey);
+                        
+                        _logger.Information("AI services initialized for user {User}", user.DisplayName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Failed to initialize AI services");
+                    }
+                }
             }
             
             // Load Dashboard by default
@@ -76,6 +95,12 @@ public partial class MainDashboardForm : FluentDesignForm
             view.Dock = DockStyle.Fill;
             view.Visible = true;
             
+            // Subscribe to logout event if this is SettingsControl
+            if (view is Views.SettingsControl settingsCtrl)
+            {
+                settingsCtrl.LogoutRequested += SettingsControl_LogoutRequested;
+            }
+            
             fluentFormContainer.Controls.Add(view);
             view.BringToFront();
             _currentView = view;
@@ -87,4 +112,14 @@ public partial class MainDashboardForm : FluentDesignForm
             _logger.Error(ex, "Failed to show view {ViewType}", typeof(T).Name);
         }
     }
+    
+    private void SettingsControl_LogoutRequested(object? sender, EventArgs e)
+    {
+        _logger.Information("Logout requested, returning to profile selection");
+        
+        // Close this form with Cancel result to trigger profile selection in Program.cs
+        this.DialogResult = DialogResult.Retry;
+        this.Close();
+    }
 }
+

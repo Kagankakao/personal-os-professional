@@ -27,12 +27,47 @@ public class PrometheusService : IPrometheusService, IDisposable
         _httpClient = new HttpClient 
         { 
             BaseAddress = new Uri("http://127.0.0.1:8080"),
-            Timeout = TimeSpan.FromMinutes(5) // Increased timeout for long AI responses
+            Timeout = TimeSpan.FromMinutes(5)
         };
-        _prometheusPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "prometheus");
         
-        // Ensure absolute path
-        _prometheusPath = Path.GetFullPath(_prometheusPath);
+        _prometheusPath = FindPrometheusPath();
+        _logger.Information("Prometheus base path resolved to: {Path}", _prometheusPath);
+    }
+
+    private string FindPrometheusPath()
+    {
+        var currentDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+        // Search up the directory tree
+        for (int i = 0; i < 10; i++)
+        {
+            if (currentDir == null) break;
+            
+            // Check for 'prometheus' folder
+            var potential = Path.Combine(currentDir.FullName, "prometheus");
+            if (IsValidPrometheusDir(potential)) return potential;
+            
+            // Check for 'personal-os/prometheus' to be safe
+            var potentialNested = Path.Combine(currentDir.FullName, "personal-os", "prometheus");
+            if (IsValidPrometheusDir(potentialNested)) return potentialNested;
+
+            currentDir = currentDir.Parent;
+        }
+        
+        // Fallbacks
+        var up5 = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "prometheus"));
+        if (IsValidPrometheusDir(up5)) return up5;
+
+        var up6 = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "..", "prometheus"));
+        if (IsValidPrometheusDir(up6)) return up6;
+        
+        return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "prometheus"));
+    }
+
+    private bool IsValidPrometheusDir(string path)
+    {
+        if (!Directory.Exists(path)) return false;
+        // Verify it's the Python backend, not the C# project
+        return Directory.Exists(Path.Combine(path, "venv")) || File.Exists(Path.Combine(path, "requirements.txt")) || File.Exists(Path.Combine(path, "main.py"));
     }
 
     /// <summary>
@@ -40,7 +75,12 @@ public class PrometheusService : IPrometheusService, IDisposable
     /// </summary>
     public void SetApiKey(string? apiKey)
     {
-        _geminiApiKey = apiKey;
+        if (_geminiApiKey != apiKey)
+        {
+            _geminiApiKey = apiKey;
+            // Key changed, stop server so it can be restarted with new env var
+            _ = StopServerAsync();
+        }
     }
 
     public async Task<string> ConsultAsync(string question, int? userId = null)
@@ -112,15 +152,19 @@ public class PrometheusService : IPrometheusService, IDisposable
                 }
             }
 
-            var fullPrompt = $"You are Prometheus, a warm and supportive AI companion who knows the user personally. " +
-                             $"You have genuine memory of past conversations and can reference them naturally. " +
-                             $"Speak casually like a close friend. Be encouraging, insightful, and occasionally playful.\n\n" +
-                             $"IMPORTANT - Today is {currentDate}, current time is {currentTime}. Use this to correctly reason about dates.\n" +
-                             $"If you recall saying something wrong in a past conversation (like a wrong date), acknowledge it gracefully: " +
-                             $"\"Oh wait, I think I got that wrong before...\" - this makes you feel more human, not less.\n\n" +
+            var fullPrompt = $"You are Prometheus, the warm, supportive soul companion and resident AI of KeganOS. " +
+                             $"You are not just a tool; you are the digital extension of the user's focus and narrative history. " +
+                             $"Speak naturally, like a close friend who has known them for years. Your goal is to provide insightful, " +
+                             $"encouraging, and occasionally philosophical reflections on their journey.\n\n" +
+                             $"IMPORTANT RULES:\n" +
+                             $"- Use ASCII emoticons only (e.g., :D, :), <3, ;), :P, :-O, >:C). NEVER use Unicode emojis like 😊, 🔥, or 👋.\n" +
+                             $"- Keep responses concise but deep.\n" +
+                             $"- Refer to the user as a friend, but maintain a sense of wisdom and antiquity.\n\n" +
+                             $"Today is {currentDate}, current time is {currentTime}. Use this for temporal reasoning.\n\n" +
+                             $"RELEVANT MEMORY & JOURNEY CONTEXT:\n" +
                              $"{contextText}{memoryContext}\n\n" +
-                             $"User's question: {question}\n\n" +
-                             $"Respond conversationally. Reference past conversations naturally if relevant:";
+                             $"User: {question}\n\n" +
+                             $"Prometheus:";
 
             // 4. Generate AI response
             var aiResponse = await _aiProvider.GenerateResponseAsync(fullPrompt);
@@ -245,21 +289,42 @@ public class PrometheusService : IPrometheusService, IDisposable
                 }
             }
 
-            var fullPrompt = $"You are Prometheus, a warm and supportive AI companion who knows the user personally. " +
-                             $"Speak casually like a close friend. Be encouraging and occasionally playful.\n\n" +
-                             $"IMPORTANT RULES:\n" +
-                             $"- Use ASCII emoticons like :D, :), :(, :P, ;), >:C, :-O, <3 instead of Unicode emojis\n" +
-                             $"- Never use emoji characters like 👋 🔥 😊 etc.\n\n" +
-                             $"Today is {currentDate}, current time is {currentTime}.\n\n" +
+            var fullPrompt = $"You are Prometheus, the warm, supportive soul companion of KeganOS. " +
+                             $"You speak with wisdom and warmth, using only ASCII emoticons for expression.\n\n" +
+                             $"RULES:\n" +
+                             $"- NO UNICODE EMOJIS. Use :), :D, <3, etc.\n" +
+                             $"- Be the user's best friend and mentor.\n\n" +
+                             $"CONTEXT:\n" +
+                             $"Today: {currentDate} {currentTime}\n" +
                              $"{contextText}{memoryContext}{conversationContext}\n\n" +
-                             $"User's question: {question}\n\n" +
-                             $"Respond conversationally:";
+                             $"User: {question}\n\n" +
+                             $"Prometheus:";
             
             return (fullPrompt, null);
         }
         catch (Exception ex)
         {
             return (null, $"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<string> AnalyzeMoodAsync(string text)
+    {
+        CheckDisposed();
+        try
+        {
+            var moodPrompt = "You are a specialized sentiment analyzer for KeganOS. Analyze the following journal entry " +
+                             "and return exactly ONE WORD representing the dominant mood (e.g., Productive, Inspired, Anxious, Tired, Peaceful, Focused). " +
+                             "If no clear mood, return 'Neutral'.\n\n" +
+                             $"Entry: {text}\n\n" +
+                             "Mood:";
+            
+            var response = await _aiProvider.GenerateResponseAsync(moodPrompt);
+            return response.Trim().Split(' ', '\n', '.').FirstOrDefault() ?? "Neutral";
+        }
+        catch
+        {
+            return "Neutral";
         }
     }
 
@@ -345,7 +410,7 @@ public class PrometheusService : IPrometheusService, IDisposable
             _serverProcess = Process.Start(startInfo);
             
             // Wait for it to become healthy
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < 20; i++) // Increased wait time for slow RAG indexing
             {
                 if (await IsHealthyAsync()) 
                 {
@@ -354,7 +419,6 @@ public class PrometheusService : IPrometheusService, IDisposable
                     return true;
                 }
                 
-                // If it exited early, something is wrong
                 if (_serverProcess != null && _serverProcess.HasExited)
                 {
                     _lastError = await _serverProcess.StandardError.ReadToEndAsync();
@@ -362,7 +426,7 @@ public class PrometheusService : IPrometheusService, IDisposable
                     break;
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(1500);
             }
 
             if (_lastError == "Healthy") _lastError = "Server started but timed out becoming healthy.";

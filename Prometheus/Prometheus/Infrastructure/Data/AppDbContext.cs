@@ -80,6 +80,7 @@ public class AppDbContext
             -- Create indexes for better performance
             CREATE INDEX IF NOT EXISTS idx_journal_user ON JournalEntries(UserId);
             CREATE INDEX IF NOT EXISTS idx_journal_date ON JournalEntries(Date);
+            CREATE INDEX IF NOT EXISTS idx_journal_mood ON JournalEntries(MoodDetected);
             
             -- NeuralNotes table
             CREATE TABLE IF NOT EXISTS Notes (
@@ -165,6 +166,41 @@ public class AppDbContext
             migrateCmd.CommandText = "ALTER TABLE Users ADD COLUMN SavedColors TEXT;";
             migrateCmd.ExecuteNonQuery();
         } catch { /* Column likely exists */ }
+
+        try 
+        {
+            var migrateCmd = connection.CreateCommand();
+            migrateCmd.CommandText = "ALTER TABLE Users ADD COLUMN DailyHours REAL DEFAULT 0;";
+            migrateCmd.ExecuteNonQuery();
+        } catch { /* Column likely exists */ }
+
+        try 
+        {
+            var migrateCmd = connection.CreateCommand();
+            migrateCmd.CommandText = "ALTER TABLE Users ADD COLUMN WeeklyHours REAL DEFAULT 0;";
+            migrateCmd.ExecuteNonQuery();
+        } catch { /* Column likely exists */ }
+
+        try 
+        {
+            var migrateCmd = connection.CreateCommand();
+            migrateCmd.CommandText = "ALTER TABLE Users ADD COLUMN BestStreak INTEGER DEFAULT 0;";
+            migrateCmd.ExecuteNonQuery();
+        } catch { /* Column likely exists */ }
+
+        // Perform Database Maintenance (VACUUM) occasionally
+        // Section 29 of Technical Documentation
+        try
+        {
+            var vacuumCmd = connection.CreateCommand();
+            vacuumCmd.CommandText = "VACUUM;";
+            vacuumCmd.ExecuteNonQuery();
+            _logger.Debug("Database vacuumed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning("Database vacuum failed: {Message}", ex.Message);
+        }
 
         _initialized = true;
         _logger.Information("Database initialized successfully");

@@ -68,13 +68,15 @@ partial class NotesControl
         this.pnlHeader.Controls.Add(this.btnNewNote);
         
         // Title
-        this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 16F);
+        this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI Semilight", 22F);
+        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.White;
         this.lblTitle.Appearance.Options.UseFont = true;
-        this.lblTitle.Location = new System.Drawing.Point(0, 10);
+        this.lblTitle.Appearance.Options.UseForeColor = true;
+        this.lblTitle.Location = new System.Drawing.Point(0, 5);
         this.lblTitle.Name = "lblTitle";
-        this.lblTitle.Size = new System.Drawing.Size(150, 30);
+        this.lblTitle.Size = new System.Drawing.Size(200, 40);
         this.lblTitle.TabIndex = 0;
-        this.lblTitle.Text = "📝 Neural Notes";
+        this.lblTitle.Text = "Neural Notes";
         
         // Search
         this.txtSearch.Location = new System.Drawing.Point(200, 10);
@@ -85,16 +87,17 @@ partial class NotesControl
         this.txtSearch.TabIndex = 1;
         
         // New Note Button
-        this.btnNewNote.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
-        this.btnNewNote.Appearance.ForeColor = System.Drawing.Color.FromArgb(76, 175, 80);
+        this.btnNewNote.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+        this.btnNewNote.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 255, 127); // Spring Green
         this.btnNewNote.Appearance.Options.UseFont = true;
         this.btnNewNote.Appearance.Options.UseForeColor = true;
         this.btnNewNote.Anchor = System.Windows.Forms.AnchorStyles.Right;
         this.btnNewNote.Location = new System.Drawing.Point(820, 8);
         this.btnNewNote.Name = "btnNewNote";
-        this.btnNewNote.Size = new System.Drawing.Size(120, 32);
+        this.btnNewNote.PaintStyle = DevExpress.XtraEditors.Controls.PaintStyles.Light;
+        this.btnNewNote.Size = new System.Drawing.Size(130, 32);
         this.btnNewNote.TabIndex = 2;
-        this.btnNewNote.Text = "+ New Note";
+        this.btnNewNote.Text = "+ CREATE NEW";
         
         // ════════════════════════════════════════════════════════════════════
         // MAIN SPLIT
@@ -121,12 +124,16 @@ partial class NotesControl
         this.pnlNotesList.Controls.Add(this.listNotes);
         
         // Notes List
+        this.listNotes.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.listNotes.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.listNotes.ItemHeight = 50;
+        this.listNotes.ItemHeight = 90;
         this.listNotes.Location = new System.Drawing.Point(2, 25);
         this.listNotes.Name = "listNotes";
+        this.listNotes.SelectionMode = System.Windows.Forms.SelectionMode.One;
         this.listNotes.Size = new System.Drawing.Size(276, 473);
         this.listNotes.TabIndex = 0;
+        this.listNotes.Appearance.BackColor = System.Drawing.Color.Transparent;
+        this.listNotes.Appearance.Options.UseBackColor = true;
         
         // ════════════════════════════════════════════════════════════════════
         // RIGHT - EDITOR
@@ -152,20 +159,22 @@ partial class NotesControl
         this.txtTitle.Dock = System.Windows.Forms.DockStyle.Top;
         this.txtTitle.Location = new System.Drawing.Point(2, 25);
         this.txtTitle.Name = "txtTitle";
-        this.txtTitle.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 14F);
+        this.txtTitle.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI Light", 24F);
         this.txtTitle.Properties.Appearance.Options.UseFont = true;
-        this.txtTitle.Properties.NullValuePrompt = "Note title...";
+        this.txtTitle.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+        this.txtTitle.Properties.NullValuePrompt = "Deep thoughts begin here...";
         this.txtTitle.Properties.NullValuePromptShowForEmptyValue = true;
-        this.txtTitle.Size = new System.Drawing.Size(656, 36);
+        this.txtTitle.Size = new System.Drawing.Size(656, 50);
         this.txtTitle.TabIndex = 0;
         
         // Content
         this.txtContent.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.txtContent.Location = new System.Drawing.Point(2, 61);
+        this.txtContent.Location = new System.Drawing.Point(2, 75);
         this.txtContent.Name = "txtContent";
-        this.txtContent.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
+        this.txtContent.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
         this.txtContent.Properties.Appearance.Options.UseFont = true;
-        this.txtContent.Properties.NullValuePrompt = "Start writing your thoughts...";
+        this.txtContent.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+        this.txtContent.Properties.NullValuePrompt = "The mind is like a parachute. It doesn't work if it isn't open...";
         this.txtContent.Properties.NullValuePromptShowForEmptyValue = true;
         this.txtContent.Properties.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
         this.txtContent.Size = new System.Drawing.Size(656, 300);

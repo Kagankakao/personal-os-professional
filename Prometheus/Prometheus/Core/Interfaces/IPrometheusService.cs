@@ -40,9 +40,19 @@ public interface IPrometheusService
     Task StopServerAsync();
 
     /// <summary>
+    /// Analyze the sentiment/mood of a specific text block
+    /// </summary>
+    Task<string> AnalyzeMoodAsync(string text);
+
+    /// <summary>
     /// Get the last error message from the server process
     /// </summary>
     string GetLastError();
+
+    /// <summary>
+    /// Set the Gemini API key for cloud operations
+    /// </summary>
+    void SetApiKey(string? apiKey);
 }
 
 public class PrometheusResult

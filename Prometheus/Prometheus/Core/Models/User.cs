@@ -63,6 +63,8 @@ public class User
     /// Total focus hours logged
     /// </summary>
     public double TotalHours { get; set; } = 0;
+    public double DailyHours { get; set; } = 0;
+    public double WeeklyHours { get; set; } = 0;
     
     /// <summary>
     /// Best streak ever achieved (persisted)

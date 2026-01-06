@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,7 +27,11 @@ namespace KeganOS.Views
             _analyticsService = analyticsService;
             _userService = userService;
             InitializeComponent();
+            
+            // Wire up glassmorphism paint
+            this.pnlHeader.Paint += PnlHeader_Paint;
         }
+
 
         protected override async void OnLoad(EventArgs e)
         {
@@ -84,6 +89,27 @@ namespace KeganOS.Views
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to load analytics data");
+            }
+        }
+        
+        private void PnlHeader_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = pnlHeader.ClientRectangle;
+
+            // Glass Background (Simulated)
+            using (var brush = new LinearGradientBrush(rect, 
+                Color.FromArgb(60, 255, 255, 255), 
+                Color.FromArgb(10, 255, 255, 255), 45f))
+            {
+                g.FillRectangle(brush, rect);
+            }
+
+            // Accent Line (Bottom) - Gold for Analytics
+            using (var pen = new Pen(Color.FromArgb(100, 255, 200, 0), 2))
+            {
+                g.DrawLine(pen, 0, rect.Height - 1, rect.Width, rect.Height - 1);
             }
         }
     }

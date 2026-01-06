@@ -28,21 +28,17 @@ partial class DashboardControl
         this.tmrJourneyStream = new System.Windows.Forms.Timer(this.components);
         this.pnlStats = new DevExpress.XtraEditors.GroupControl();
         this.progressHeatmapLoading = new DevExpress.XtraWaitForm.ProgressPanel();
-        this.picPixelaHeatmap = new DevExpress.XtraEditors.PictureEdit();
-        this.lblBestValue = new DevExpress.XtraEditors.LabelControl();
-        this.lblBest = new DevExpress.XtraEditors.LabelControl();
-        this.btnManualTime = new DevExpress.XtraEditors.SimpleButton();
-        this.btnShowJournal = new DevExpress.XtraEditors.SimpleButton();
-        this.lblStreakValue = new DevExpress.XtraEditors.LabelControl();
-        this.lblStreak = new DevExpress.XtraEditors.LabelControl();
         this.progressXP = new DevExpress.XtraEditors.ProgressBarControl();
         this.lblLevelText = new DevExpress.XtraEditors.LabelControl();
-        this.lblTotalValue = new DevExpress.XtraEditors.LabelControl();
-        this.lblTotal = new DevExpress.XtraEditors.LabelControl();
-        this.lblWeekValue = new DevExpress.XtraEditors.LabelControl();
-        this.lblWeek = new DevExpress.XtraEditors.LabelControl();
-        this.lblTodayValue = new DevExpress.XtraEditors.LabelControl();
-        this.lblToday = new DevExpress.XtraEditors.LabelControl();
+        this.tileStats = new DevExpress.XtraEditors.TileControl();
+        this.tileGroupStats = new DevExpress.XtraEditors.TileGroup();
+        this.tileItemToday = new DevExpress.XtraEditors.TileItem();
+        this.tileItemWeek = new DevExpress.XtraEditors.TileItem();
+        this.tileItemTotal = new DevExpress.XtraEditors.TileItem();
+        this.tileItemStreak = new DevExpress.XtraEditors.TileItem();
+        this.picPixelaHeatmap = new DevExpress.XtraEditors.PictureEdit();
+        this.btnManualTime = new DevExpress.XtraEditors.SimpleButton();
+        this.btnShowJournal = new DevExpress.XtraEditors.SimpleButton();
         
         ((System.ComponentModel.ISupportInitialize)(this.pnlMotivation)).BeginInit();
         this.pnlMotivation.SuspendLayout();
@@ -188,23 +184,49 @@ partial class DashboardControl
         this.pnlStats.Name = "pnlStats";
         this.pnlStats.Size = new System.Drawing.Size(490, 500);
         this.pnlStats.TabIndex = 0;
-        this.pnlStats.Text = "📊 Your Stats";
+        this.pnlStats.Controls.Add(this.tileStats);
         this.pnlStats.Controls.Add(this.progressHeatmapLoading);
         this.pnlStats.Controls.Add(this.picPixelaHeatmap);
         this.pnlStats.Controls.Add(this.btnManualTime);
         this.pnlStats.Controls.Add(this.btnShowJournal);
-        this.pnlStats.Controls.Add(this.lblBestValue);
-        this.pnlStats.Controls.Add(this.lblBest);
-        this.pnlStats.Controls.Add(this.lblStreakValue);
-        this.pnlStats.Controls.Add(this.lblStreak);
         this.pnlStats.Controls.Add(this.progressXP);
         this.pnlStats.Controls.Add(this.lblLevelText);
-        this.pnlStats.Controls.Add(this.lblTotalValue);
-        this.pnlStats.Controls.Add(this.lblTotal);
-        this.pnlStats.Controls.Add(this.lblWeekValue);
-        this.pnlStats.Controls.Add(this.lblWeek);
-        this.pnlStats.Controls.Add(this.lblTodayValue);
-        this.pnlStats.Controls.Add(this.lblToday);
+        // 
+        // tileStats
+        // 
+        this.tileStats.Groups.Add(this.tileGroupStats);
+        this.tileGroupStats.Items.Add(this.tileItemToday);
+        this.tileGroupStats.Items.Add(this.tileItemWeek);
+        this.tileGroupStats.Items.Add(this.tileItemTotal);
+        this.tileGroupStats.Items.Add(this.tileItemStreak);
+        this.tileStats.Location = new System.Drawing.Point(20, 70); // Moved down from 40
+        this.tileStats.Name = "tileStats";
+        this.tileStats.Size = new System.Drawing.Size(450, 210); // Slightly reduced height
+        this.tileStats.TabIndex = 23;
+        this.tileStats.ColumnCount = 2;
+        this.tileStats.Orientation = System.Windows.Forms.Orientation.Vertical;
+        this.tileStats.ItemSize = 100;
+        this.tileStats.IndentBetweenItems = 10;
+        
+        // tileItemToday
+        this.tileItemToday.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(0, 120, 212);
+        this.tileItemToday.Name = "tileItemToday";
+        this.tileItemToday.Text = "Today";
+        
+        // tileItemWeek
+        this.tileItemWeek.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(76, 175, 80);
+        this.tileItemWeek.Name = "tileItemWeek";
+        this.tileItemWeek.Text = "Week";
+        
+        // tileItemTotal
+        this.tileItemTotal.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(156, 39, 176);
+        this.tileItemTotal.Name = "tileItemTotal";
+        this.tileItemTotal.Text = "Total";
+        
+        // tileItemStreak
+        this.tileItemStreak.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(255, 152, 0);
+        this.tileItemStreak.Name = "tileItemStreak";
+        this.tileItemStreak.Text = "Streak";
         // 
         // progressHeatmapLoading
         // 
@@ -223,7 +245,7 @@ partial class DashboardControl
         // 
         this.btnManualTime.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
         this.btnManualTime.Appearance.Options.UseFont = true;
-        this.btnManualTime.Location = new System.Drawing.Point(300, 78);
+        this.btnManualTime.Location = new System.Drawing.Point(300, 35); // Moved up from 78
         this.btnManualTime.Name = "btnManualTime";
         this.btnManualTime.Size = new System.Drawing.Size(80, 24);
         this.btnManualTime.TabIndex = 20;
@@ -234,75 +256,12 @@ partial class DashboardControl
         // 
         this.btnShowJournal.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
         this.btnShowJournal.Appearance.Options.UseFont = true;
-        this.btnShowJournal.Location = new System.Drawing.Point(300, 108);
+        this.btnShowJournal.Location = new System.Drawing.Point(390, 35); // Moved up from 108 and right
         this.btnShowJournal.Name = "btnShowJournal";
         this.btnShowJournal.Size = new System.Drawing.Size(80, 24);
         this.btnShowJournal.TabIndex = 21;
         this.btnShowJournal.Text = "Notebook";
         this.btnShowJournal.ToolTip = "Open Daily Journal";
-        // 
-        // lblToday
-        // 
-        this.lblToday.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
-        this.lblToday.Location = new System.Drawing.Point(30, 50);
-        this.lblToday.Name = "lblToday";
-        this.lblToday.Size = new System.Drawing.Size(50, 20);
-        this.lblToday.TabIndex = 0;
-        this.lblToday.Text = "Today:";
-        // 
-        // lblTodayValue
-        // 
-        this.lblTodayValue.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
-        this.lblTodayValue.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
-        this.lblTodayValue.Appearance.Options.UseFont = true;
-        this.lblTodayValue.Appearance.Options.UseForeColor = true;
-        this.lblTodayValue.Location = new System.Drawing.Point(200, 50);
-        this.lblTodayValue.Name = "lblTodayValue";
-        this.lblTodayValue.Size = new System.Drawing.Size(50, 20);
-        this.lblTodayValue.TabIndex = 1;
-        this.lblTodayValue.Text = "0 hrs";
-        // 
-        // lblWeek
-        // 
-        this.lblWeek.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
-        this.lblWeek.Location = new System.Drawing.Point(30, 80);
-        this.lblWeek.Name = "lblWeek";
-        this.lblWeek.Size = new System.Drawing.Size(50, 20);
-        this.lblWeek.TabIndex = 2;
-        this.lblWeek.Text = "Week:";
-        // 
-        // lblWeekValue
-        // 
-        this.lblWeekValue.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
-        this.lblWeekValue.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
-        this.lblWeekValue.Appearance.Options.UseFont = true;
-        this.lblWeekValue.Appearance.Options.UseForeColor = true;
-        this.lblWeekValue.Location = new System.Drawing.Point(200, 80);
-        this.lblWeekValue.Name = "lblWeekValue";
-        this.lblWeekValue.Size = new System.Drawing.Size(50, 20);
-        this.lblWeekValue.TabIndex = 3;
-        this.lblWeekValue.Text = "0 hrs";
-        // 
-        // lblTotal
-        // 
-        this.lblTotal.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
-        this.lblTotal.Location = new System.Drawing.Point(30, 110);
-        this.lblTotal.Name = "lblTotal";
-        this.lblTotal.Size = new System.Drawing.Size(50, 20);
-        this.lblTotal.TabIndex = 4;
-        this.lblTotal.Text = "Total:";
-        // 
-        // lblTotalValue
-        // 
-        this.lblTotalValue.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
-        this.lblTotalValue.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
-        this.lblTotalValue.Appearance.Options.UseFont = true;
-        this.lblTotalValue.Appearance.Options.UseForeColor = true;
-        this.lblTotalValue.Location = new System.Drawing.Point(200, 110);
-        this.lblTotalValue.Name = "lblTotalValue";
-        this.lblTotalValue.Size = new System.Drawing.Size(60, 20);
-        this.lblTotalValue.TabIndex = 5;
-        this.lblTotalValue.Text = "0 hrs";
         // 
         // lblLevelText
         // 
@@ -323,48 +282,6 @@ partial class DashboardControl
         this.progressXP.Properties.ShowTitle = false;
         this.progressXP.Size = new System.Drawing.Size(400, 20);
         this.progressXP.TabIndex = 7;
-        // 
-        // lblStreak
-        // 
-        this.lblStreak.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
-        this.lblStreak.Location = new System.Drawing.Point(30, 240);
-        this.lblStreak.Name = "lblStreak";
-        this.lblStreak.Size = new System.Drawing.Size(70, 20);
-        this.lblStreak.TabIndex = 8;
-        this.lblStreak.Text = "◎ Streak:";
-        // 
-        // lblStreakValue
-        // 
-        this.lblStreakValue.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
-        this.lblStreakValue.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
-        this.lblStreakValue.Appearance.Options.UseFont = true;
-        this.lblStreakValue.Appearance.Options.UseForeColor = true;
-        this.lblStreakValue.Location = new System.Drawing.Point(200, 240);
-        this.lblStreakValue.Name = "lblStreakValue";
-        this.lblStreakValue.Size = new System.Drawing.Size(60, 20);
-        this.lblStreakValue.TabIndex = 9;
-        this.lblStreakValue.Text = "0 days";
-        // 
-        // lblBest
-        // 
-        this.lblBest.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
-        this.lblBest.Location = new System.Drawing.Point(30, 270);
-        this.lblBest.Name = "lblBest";
-        this.lblBest.Size = new System.Drawing.Size(60, 20);
-        this.lblBest.TabIndex = 10;
-        this.lblBest.Text = "✿ Best:";
-        // 
-        // lblBestValue
-        // 
-        this.lblBestValue.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 11F);
-        this.lblBestValue.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
-        this.lblBestValue.Appearance.Options.UseFont = true;
-        this.lblBestValue.Appearance.Options.UseForeColor = true;
-        this.lblBestValue.Location = new System.Drawing.Point(200, 270);
-        this.lblBestValue.Name = "lblBestValue";
-        this.lblBestValue.Size = new System.Drawing.Size(60, 20);
-        this.lblBestValue.TabIndex = 11;
-        this.lblBestValue.Text = "0 days";
         // 
         // picPixelaHeatmap
         // 
@@ -418,19 +335,15 @@ partial class DashboardControl
     private DevExpress.XtraEditors.SimpleButton btnShowJournal;
     private DevExpress.XtraEditors.GroupControl pnlStats;
     private DevExpress.XtraWaitForm.ProgressPanel progressHeatmapLoading;
-    private DevExpress.XtraEditors.PictureEdit picPixelaHeatmap;
-    private DevExpress.XtraEditors.LabelControl lblToday;
-    private DevExpress.XtraEditors.LabelControl lblTodayValue;
-    private DevExpress.XtraEditors.LabelControl lblWeek;
-    private DevExpress.XtraEditors.LabelControl lblWeekValue;
-    private DevExpress.XtraEditors.LabelControl lblTotal;
-    private DevExpress.XtraEditors.LabelControl lblTotalValue;
-    private DevExpress.XtraEditors.LabelControl lblLevelText;
-    private DevExpress.XtraEditors.ProgressBarControl progressXP;
-    private DevExpress.XtraEditors.LabelControl lblStreak;
-    private DevExpress.XtraEditors.LabelControl lblStreakValue;
-    private DevExpress.XtraEditors.LabelControl lblBest;
-    private DevExpress.XtraEditors.LabelControl lblBestValue;
+    private DevExpress.XtraEditors.TileControl tileStats;
+    private DevExpress.XtraEditors.TileGroup tileGroupStats;
+    private DevExpress.XtraEditors.TileItem tileItemToday;
+    private DevExpress.XtraEditors.TileItem tileItemWeek;
+    private DevExpress.XtraEditors.TileItem tileItemTotal;
+    private DevExpress.XtraEditors.TileItem tileItemStreak;
     private DevExpress.XtraEditors.PictureEdit picTimerBrand;
+    private DevExpress.XtraEditors.PictureEdit picPixelaHeatmap;
+    private DevExpress.XtraEditors.ProgressBarControl progressXP;
+    private DevExpress.XtraEditors.LabelControl lblLevelText;
     private System.Windows.Forms.Timer tmrJourneyStream;
 }
