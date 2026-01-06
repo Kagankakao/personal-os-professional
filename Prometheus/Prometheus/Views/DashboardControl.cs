@@ -12,23 +12,37 @@ namespace KeganOS.Views
 {
     public partial class DashboardControl : XtraUserControl
     {
+        private static DateTime _lastHeatmapRefresh = DateTime.MinValue;
         private readonly IUserService _userService;
         private readonly IMotivationalMessageService _motivationService;
         private readonly IPixelaService _pixelaService;
         private readonly IAnalyticsService _analyticsService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IKegomoDoroService _kegomoDoroService;
         private readonly ILogger _logger = Log.ForContext<DashboardControl>();
+        
+        private string _journeyText = "";
+        private int _streamIndex = 0;
 
         public DashboardControl(IUserService userService, IMotivationalMessageService motivationService, 
-            IPixelaService pixelaService, IAnalyticsService analyticsService, IServiceProvider serviceProvider)
+            IPixelaService pixelaService, IAnalyticsService analyticsService, 
+            IKegomoDoroService kegomoDoroService, IServiceProvider serviceProvider)
         {
             _userService = userService;
             _motivationService = motivationService;
             _pixelaService = pixelaService;
             _analyticsService = analyticsService;
+            _kegomoDoroService = kegomoDoroService;
             _serviceProvider = serviceProvider;
             InitializeComponent();
 
+            // Simple Timer UI (Requested)
+            picTimerBrand.Visible = false;
+            lblTimerDisplay.Text = "25:00";
+            lblTimerDisplay.Visible = true;
+            lblTimerDisplay.Font = new System.Drawing.Font("Segoe UI Light", 72F);
+            lblTimerDisplay.ForeColor = System.Drawing.Color.DimGray; // Professional grey
+            
             // Setup simple button hover effects
             SetupButton(btnStart, System.Drawing.Color.FromArgb(76, 175, 80)); // Green
             SetupButton(btnCustomize, System.Drawing.Color.FromArgb(0, 188, 212)); // Cyan
@@ -47,7 +61,9 @@ namespace KeganOS.Views
             // Setup heatmap cursor and click
             picPixelaHeatmap.Cursor = System.Windows.Forms.Cursors.Hand;
             picPixelaHeatmap.Properties.NullText = " ";
-            // picPixelaHeatmap.BackColor = System.Drawing.Color.Transparent;
+            
+            // Setup Journey Streamer
+            tmrJourneyStream.Tick += TmrJourneyStream_Tick;
             
             picPixelaHeatmap.Click += async (s, e) => 
             {
@@ -62,6 +78,10 @@ namespace KeganOS.Views
                     });
                 }
             };
+
+            // Ensure transparency
+            progressHeatmapLoading.Appearance.BackColor = System.Drawing.Color.Transparent;
+            progressHeatmapLoading.Appearance.Options.UseBackColor = true;
         }
 
         private void BtnStart_Click(object? sender, EventArgs e)
@@ -74,9 +94,11 @@ namespace KeganOS.Views
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = "python",
+                        FileName = "pythonw",
                         Arguments = $"\"{kegomoDoroPath}\"",
                         UseShellExecute = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden,
                         WorkingDirectory = System.IO.Path.GetDirectoryName(kegomoDoroPath)
                     });
                     _logger.Information("Launched KegomoDoro from {Path}", kegomoDoroPath);
@@ -105,7 +127,7 @@ namespace KeganOS.Views
                 string result = XtraInputBox.Show("Enter hours to log (e.g. 1.5):", "Log Manual Time", "0");
                 if (double.TryParse(result, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double hours) && hours > 0)
                 {
-                    bool success = await _pixelaService.PostPixelAsync(user, DateTime.Today, hours);
+                    bool success = await _analyticsService.AddManualTimeAsync(user, hours);
                     if (success)
                     {
                         XtraMessageBox.Show($"Successfully logged {hours} hours!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -224,6 +246,77 @@ namespace KeganOS.Views
             await RefreshStatsAsync();
             await RefreshMotivationAsync();
             await RefreshPixelaHeatmapAsync();
+            await LoadBrandingImageAsync();
+            await StartJourneyStreamingAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadBrandingImageAsync()
+        {
+            try
+            {
+                // Find main_image.png in kegomodoro
+                string baseDir = FindKegomoDoroPath();
+                if (!string.IsNullOrEmpty(baseDir))
+                {
+                    string imagesDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(baseDir), "dependencies", "images");
+                    string brandImgPath = System.IO.Path.Combine(imagesDir, "main_image.png");
+
+                    if (System.IO.File.Exists(brandImgPath))
+                    {
+                        picTimerBrand.Image = System.Drawing.Image.FromFile(brandImgPath);
+                        _logger.Debug("Loaded branding image from {Path}", brandImgPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning(ex, "Failed to load branding image");
+            }
+        }
+
+        private async System.Threading.Tasks.Task StartJourneyStreamingAsync()
+        {
+            try
+            {
+                var user = await _userService.GetCurrentUserAsync();
+                if (user == null) return;
+
+                // Resolve journey path: kegomodoro/dependencies/texts/Users/[Username]/[JournalFileName]
+                string kegMain = FindKegomoDoroPath();
+                if (string.IsNullOrEmpty(kegMain)) return;
+
+                string userDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(kegMain), "dependencies", "texts", "Users", user.DisplayName);
+                string journalFile = user.JournalFileName ?? "KAÆ[Æß#.txt";
+                string fullPath = System.IO.Path.Combine(userDir, journalFile);
+
+                if (System.IO.File.Exists(fullPath))
+                {
+                    _journeyText = await System.IO.File.ReadAllTextAsync(fullPath);
+                    if (!string.IsNullOrWhiteSpace(_journeyText))
+                    {
+                        _streamIndex = 0;
+                        lblMotivation.Text = "";
+                        tmrJourneyStream.Start();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to start journey streaming");
+            }
+        }
+
+        private void TmrJourneyStream_Tick(object sender, EventArgs e)
+        {
+            if (_streamIndex < _journeyText.Length)
+            {
+                lblMotivation.Text += _journeyText[_streamIndex];
+                _streamIndex++;
+            }
+            else
+            {
+                tmrJourneyStream.Stop();
+            }
         }
 
         public async System.Threading.Tasks.Task RefreshStatsAsync()
@@ -275,19 +368,25 @@ namespace KeganOS.Views
             try
             {
                 var user = await _userService.GetCurrentUserAsync();
-                if (user == null || !_pixelaService.IsConfigured(user))
+                // Don't refresh if we already refreshed in the last 60 seconds
+                var timeSinceLastRefresh = DateTime.Now - _lastHeatmapRefresh;
+                
+                if (timeSinceLastRefresh.TotalSeconds < 60 && picPixelaHeatmap.SvgImage != null)
                 {
-                    picPixelaHeatmap.Visible = false;
+                    _logger.Debug("Skipping heatmap refresh, too soon. Using cached view.");
+                    picPixelaHeatmap.Visible = true;
                     return;
                 }
 
-                picPixelaHeatmap.Visible = true;
-                progressHeatmapLoading.Visible = true;
-                progressHeatmapLoading.BringToFront();
+                // Show spinner only if we don't have an image yet
+                if (picPixelaHeatmap.SvgImage == null)
+                {
+                    progressHeatmapLoading.Visible = true;
+                }
                 
                 // Pixe.la returns SVG by default.
-                // User requested WHITE background, so we remove appearance=dark and don't strip the background.
-                string url = $"https://pixe.la/v1/users/{user.PixelaUsername}/graphs/{user.PixelaGraphId}";
+                // Added a cache-buster query parameter to force fresh data.
+                string url = $"https://pixe.la/v1/users/{user.PixelaUsername}/graphs/{user.PixelaGraphId}?t={DateTime.Now.Ticks}";
                 
                 _logger.Debug("Fetching Pixe.la heatmap (SVG) from {Url}", url);
 
@@ -330,8 +429,18 @@ namespace KeganOS.Views
                         try 
                         {
                             // Load as SvgImage
-                            // Normalize SVG content for DevExpress compatibility
-                            // strict replacement of known issues
+                            // 1. Strip the background rectangle if present (Pixe.la puts a white rect at the start)
+                            var rectStart = svgContent.IndexOf("<rect");
+                            if (rectStart > 0)
+                            {
+                                var rectEnd = svgContent.IndexOf("/>", rectStart);
+                                if (rectEnd > rectStart && svgContent.Substring(rectStart, rectEnd - rectStart).Contains("white"))
+                                {
+                                    svgContent = svgContent.Remove(rectStart, (rectEnd + 2) - rectStart);
+                                }
+                            }
+
+                            // 2. Normalize colors (ensure white text/lines match the theme if needed)
                             svgContent = svgContent.Replace("fill=\"white\"", "fill=\"#FFFFFF\"")
                                                    .Replace("fill-opacity=\"0.5\"", "fill-opacity=\"1.0\"");
 
@@ -350,6 +459,7 @@ namespace KeganOS.Views
                             try
                             {
                                 await System.IO.File.WriteAllTextAsync(cachePath, svgContent);
+                                _lastHeatmapRefresh = DateTime.Now;
                                 _logger.Debug("Updated Pixe.la heatmap cache");
                             }
                             catch (Exception ex)
@@ -392,7 +502,7 @@ namespace KeganOS.Views
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to refresh Pixela heatmap");
-                picPixelaHeatmap.Visible = false;
+                // picPixelaHeatmap.Visible = false; // Don't hide on error if we already have a cached one
             }
             finally
             {
@@ -416,6 +526,7 @@ namespace KeganOS.Views
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to refresh motivation");
+                lblMotivation.Text = "Embark on your journey...";
             }
         }
 
@@ -423,29 +534,18 @@ namespace KeganOS.Views
         {
             try
             {
-                var kegomoDoroPath = System.IO.Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory, 
-                    "..", "..", "..", "..", "kegomodoro", "main.py");
+                _logger.Information("Manual launch of KEGOMODORO requested");
+                _kegomoDoroService.Launch();
                 
-                if (System.IO.File.Exists(kegomoDoroPath))
+                if (!string.IsNullOrEmpty(_kegomoDoroService.LastError))
                 {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "python",
-                        Arguments = $"\"{kegomoDoroPath}\"",
-                        UseShellExecute = true,
-                        WorkingDirectory = System.IO.Path.GetDirectoryName(kegomoDoroPath)
-                    });
-                }
-                else
-                {
-                    XtraMessageBox.Show("KegomoDoro not found at expected path.", "Error", 
+                    XtraMessageBox.Show(_kegomoDoroService.LastError, "Launch Error", 
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Failed to launch KegomoDoro");
+                _logger.Error(ex, "Failed to launch KegomoDoro manually");
                 XtraMessageBox.Show($"Failed to launch: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }

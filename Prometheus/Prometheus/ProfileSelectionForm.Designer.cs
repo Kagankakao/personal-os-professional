@@ -23,8 +23,19 @@ namespace KeganOS
             // tileControl1
             // 
             this.tileControl1.AllowDrag = false;
+            this.tileControl1.AllowItemHover = true;
+            this.tileControl1.AppearanceItem.Normal.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(40)))), ((int)(((byte)(40)))));
+            this.tileControl1.AppearanceItem.Normal.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.tileControl1.AppearanceItem.Normal.Font = new System.Drawing.Font("Segoe UI", 12F);
+            this.tileControl1.AppearanceItem.Normal.ForeColor = System.Drawing.Color.White;
+            this.tileControl1.AppearanceItem.Normal.Options.UseBackColor = true;
+            this.tileControl1.AppearanceItem.Normal.Options.UseBorderColor = true;
             this.tileControl1.AppearanceItem.Normal.Options.UseFont = true;
+            this.tileControl1.AppearanceItem.Normal.Options.UseForeColor = true;
+            this.tileControl1.AppearanceItem.Hovered.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(100)))), ((int)(((byte)(100)))));
+            this.tileControl1.AppearanceItem.Hovered.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(150)))), ((int)(((byte)(136)))));
+            this.tileControl1.AppearanceItem.Hovered.Options.UseBackColor = true;
+            this.tileControl1.AppearanceItem.Hovered.Options.UseBorderColor = true;
             this.tileControl1.Cursor = System.Windows.Forms.Cursors.Default;
             this.tileControl1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.tileControl1.Groups.Add(this.tileGroup2);

@@ -452,4 +452,55 @@ public class KegomoDoroService : IKegomoDoroService
 
         return prefs;
     }
+
+    public async Task<bool> AddManualTimeAsync(User user, double hours)
+    {
+        try
+        {
+            _logger.Information("Syncing {Hours} manual hours to KEGOMODORO CSV for user {Name}", hours, user.DisplayName);
+
+            // path format: kegomodoro/dependencies/texts/Users/[Name]/time.csv
+            string userTimeCsv = Path.Combine(_kegomoDoroPath, "dependencies", "texts", "Users", user.DisplayName, "time.csv");
+            
+            if (!File.Exists(userTimeCsv))
+            {
+                // Create if missing
+                Directory.CreateDirectory(Path.GetDirectoryName(userTimeCsv)!);
+                await File.WriteAllTextAsync(userTimeCsv, "hours,minute,second\n0,0,0\n");
+            }
+
+            // Read, Update, Write
+            var lines = await File.ReadAllLinesAsync(userTimeCsv);
+            if (lines.Length >= 2)
+            {
+                var header = lines[0];
+                var data = lines[1].Split(',');
+                
+                if (data.Length >= 3)
+                {
+                    // Calculate total seconds to avoid floating point issues in Python int() conversion
+                    double totalSeconds = (double.TryParse(data[0], out var h) ? h : 0) * 3600 +
+                                          (double.TryParse(data[1], out var m) ? m : 0) * 60 +
+                                          (double.TryParse(data[2], out var s) ? s : 0);
+                    
+                    totalSeconds += hours * 3600;
+                    
+                    int newH = (int)(totalSeconds / 3600);
+                    int newM = (int)((totalSeconds % 3600) / 60);
+                    int newS = (int)(totalSeconds % 60);
+                    
+                    lines[1] = $"{newH},{newM},{newS}";
+                    await File.WriteAllLinesAsync(userTimeCsv, lines);
+                    _logger.Information("Synced manual time to KEGOMODORO CSV: {Path}", userTimeCsv);
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error syncing time to KEGOMODORO CSV");
+            return false;
+        }
+    }
 }

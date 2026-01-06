@@ -71,10 +71,16 @@ public partial class MainDashboardForm : FluentDesignForm
                 fluentFormContainer.Controls.Remove(_currentView);
             }
             
+            _logger.Information("Showing view: {ViewType}", typeof(T).Name);
             var view = _serviceProvider.GetRequiredService<T>();
             view.Dock = DockStyle.Fill;
+            view.Visible = true;
+            
             fluentFormContainer.Controls.Add(view);
+            view.BringToFront();
             _currentView = view;
+            
+            _logger.Information("Successfully added and displayed view: {ViewType}", typeof(T).Name);
         }
         catch (Exception ex)
         {

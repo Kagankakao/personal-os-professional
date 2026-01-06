@@ -23,6 +23,7 @@ namespace KeganOS
             _userService = userService;
             _serviceProvider = serviceProvider;
             InitializeComponent();
+            tileControl1.Cursor = Cursors.Hand;
         }
 
         protected override async void OnLoad(EventArgs e)
@@ -56,34 +57,66 @@ namespace KeganOS
             foreach (var user in users)
             {
                 var item = new TileItem();
-                item.Text = user.DisplayName;
                 item.Tag = user;
-                item.Appearance.BackColor = Color.FromArgb(40, 40, 40);
-                item.Appearance.ForeColor = Color.White;
                 item.ItemSize = TileItemSize.Medium;
                 
-                if (user.HasAvatar)
+                // Element 0: Circular Avatar
+                var elImage = new TileItemElement();
+                elImage.ImageAlignment = TileItemContentAlignment.MiddleCenter;
+                elImage.ImageScaleMode = TileItemImageScaleMode.ZoomInside;
+                
+                if (user.HasAvatar && System.IO.File.Exists(user.AvatarPath))
                 {
                     try
                     {
-                        item.Image = Image.FromFile(user.AvatarPath);
-                        item.ImageAlignment = TileItemContentAlignment.MiddleCenter;
-                        item.ImageToTextAlignment = TileControlImageToTextAlignment.Top;
-                        item.ImageScaleMode = TileItemImageScaleMode.ZoomOutside;
+                        using (var original = Image.FromFile(user.AvatarPath))
+                        {
+                            elImage.Image = GetCircularImage(original, 80);
+                        }
                     }
-                    catch { /* Ignore image load errors */ }
+                    catch { /* Fallback to default or nothing */ }
                 }
+                
+                // Element 1: Display Name
+                var elText = new TileItemElement();
+                elText.Text = user.DisplayName;
+                elText.TextAlignment = TileItemContentAlignment.BottomCenter;
+                elText.Appearance.Normal.Font = new Font("Segoe UI Semibold", 10F);
+                
+                item.Elements.Add(elImage);
+                item.Elements.Add(elText);
                 
                 tileControl1.Groups[0].Items.Add(item);
             }
             
             // Add "Create New" item
             var newItem = new TileItem();
-            newItem.Text = "+ New Profile";
-            newItem.Appearance.BackColor = Color.FromArgb(0, 150, 136);
+            var elNewText = new TileItemElement();
+            elNewText.Text = "+ New Profile";
+            elNewText.TextAlignment = TileItemContentAlignment.MiddleCenter;
+            newItem.Elements.Add(elNewText);
+            
             newItem.ItemSize = TileItemSize.Medium;
             newItem.Tag = "NEW";
             tileControl1.Groups[0].Items.Add(newItem);
+        }
+
+        private Image GetCircularImage(Image img, int size)
+        {
+            var bitmap = new Bitmap(size, size);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.Clear(Color.Transparent);
+                
+                using (var path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    path.AddEllipse(0, 0, size, size);
+                    g.SetClip(path);
+                    g.DrawImage(img, new Rectangle(0, 0, size, size));
+                }
+            }
+            return bitmap;
         }
 
         private async void tileControl1_ItemClick(object sender, TileItemEventArgs e)

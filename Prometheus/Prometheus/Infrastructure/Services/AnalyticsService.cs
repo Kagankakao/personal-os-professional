@@ -12,12 +12,17 @@ public class AnalyticsService : IAnalyticsService
     private readonly IJournalService _journalService;
     private readonly IAIProvider _aiProvider;
     private readonly IPixelaService _pixelaService;
+    private readonly IUserService _userService;
+    private readonly IKegomoDoroService _kegomoDoroService;
 
-    public AnalyticsService(IJournalService journalService, IAIProvider aiProvider, IPixelaService pixelaService)
+    public AnalyticsService(IJournalService journalService, IAIProvider aiProvider, 
+        IPixelaService pixelaService, IUserService userService, IKegomoDoroService kegomoDoroService)
     {
         _journalService = journalService;
         _aiProvider = aiProvider;
         _pixelaService = pixelaService;
+        _userService = userService;
+        _kegomoDoroService = kegomoDoroService;
     }
 
     public async Task<Dictionary<DayOfWeek, double>> GetWeeklyDataAsync(User user, DateTime weekStartDate)
@@ -163,6 +168,36 @@ public class AnalyticsService : IAnalyticsService
         {
             _logger.Error(ex, "Error calculating streak");
             return 0;
+        }
+    }
+
+    public async Task<bool> AddManualTimeAsync(User user, double hours)
+    {
+        try
+        {
+            _logger.Information("Adding manual time: {Hours} hrs for user {Name}", hours, user.DisplayName);
+
+            // 1. Update Database (Source of Truth)
+            user.TotalHours += hours;
+            // Add some XP (100 XP per hour)
+            user.XP += (long)(hours * 100); 
+            await _userService.UpdateUserAsync(user);
+
+            // 2. Update Pixela (Online Heatmap)
+            if (_pixelaService.IsConfigured(user))
+            {
+                await _pixelaService.PostPixelAsync(user, DateTime.Today, hours);
+            }
+
+            // 3. Sync to KEGOMODORO (CSV)
+            await _kegomoDoroService.AddManualTimeAsync(user, hours);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to add manual time");
+            return false;
         }
     }
 }

@@ -24,4 +24,9 @@ public interface IAnalyticsService
     /// Calculates the current active streak in days
     /// </summary>
     Task<int> CalculateCurrentStreakAsync(User user);
+
+    /// <summary>
+    /// Logs manual hours, synchronizing with both the database and KEGOMODORO
+    /// </summary>
+    Task<bool> AddManualTimeAsync(User user, double hours);
 }

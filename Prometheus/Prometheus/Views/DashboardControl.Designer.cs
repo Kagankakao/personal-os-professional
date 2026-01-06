@@ -15,6 +15,7 @@ partial class DashboardControl
 
     private void InitializeComponent()
     {
+        this.components = new System.ComponentModel.Container();
         this.pnlMotivation = new DevExpress.XtraEditors.PanelControl();
         this.lblMotivation = new DevExpress.XtraEditors.LabelControl();
         this.splitMain = new DevExpress.XtraEditors.SplitContainerControl();
@@ -23,6 +24,8 @@ partial class DashboardControl
         this.btnCustomize = new DevExpress.XtraEditors.SimpleButton();
         this.btnStart = new DevExpress.XtraEditors.SimpleButton();
         this.lblTimerDisplay = new DevExpress.XtraEditors.LabelControl();
+        this.picTimerBrand = new DevExpress.XtraEditors.PictureEdit();
+        this.tmrJourneyStream = new System.Windows.Forms.Timer(this.components);
         this.pnlStats = new DevExpress.XtraEditors.GroupControl();
         this.progressHeatmapLoading = new DevExpress.XtraWaitForm.ProgressPanel();
         this.picPixelaHeatmap = new DevExpress.XtraEditors.PictureEdit();
@@ -55,6 +58,7 @@ partial class DashboardControl
         this.pnlStats.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)(this.picPixelaHeatmap.Properties)).BeginInit();
         ((System.ComponentModel.ISupportInitialize)(this.progressXP.Properties)).BeginInit();
+        ((System.ComponentModel.ISupportInitialize)(this.picTimerBrand.Properties)).BeginInit();
         this.SuspendLayout();
         // 
         // pnlMotivation
@@ -110,6 +114,7 @@ partial class DashboardControl
         this.pnlTimer.Controls.Add(this.btnCustomize);
         this.pnlTimer.Controls.Add(this.btnStart);
         this.pnlTimer.Controls.Add(this.lblTimerDisplay);
+        this.pnlTimer.Controls.Add(this.picTimerBrand);
         // 
         // lblTimerDisplay
         // 
@@ -123,6 +128,23 @@ partial class DashboardControl
         this.lblTimerDisplay.Size = new System.Drawing.Size(350, 120);
         this.lblTimerDisplay.TabIndex = 0;
         this.lblTimerDisplay.Text = "25:00";
+        this.lblTimerDisplay.Visible = false;
+        // 
+        // picTimerBrand
+        // 
+        this.picTimerBrand.Location = new System.Drawing.Point(50, 40);
+        this.picTimerBrand.Name = "picTimerBrand";
+        this.picTimerBrand.Properties.Appearance.BackColor = System.Drawing.Color.Transparent;
+        this.picTimerBrand.Properties.Appearance.Options.UseBackColor = true;
+        this.picTimerBrand.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+        this.picTimerBrand.Properties.NullText = " ";
+        this.picTimerBrand.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+        this.picTimerBrand.Size = new System.Drawing.Size(350, 160);
+        this.picTimerBrand.TabIndex = 4;
+        // 
+        // tmrJourneyStream
+        // 
+        this.tmrJourneyStream.Interval = 50;
         // 
         // btnStart
         // 
@@ -188,14 +210,13 @@ partial class DashboardControl
         // 
         this.progressHeatmapLoading.Appearance.BackColor = System.Drawing.Color.Transparent;
         this.progressHeatmapLoading.Appearance.Options.UseBackColor = true;
-        this.progressHeatmapLoading.BarAnimationElementThickness = 2;
-        this.progressHeatmapLoading.Caption = "Refreshing Heatmap...";
-        this.progressHeatmapLoading.Description = "Please wait";
-        this.progressHeatmapLoading.Location = new System.Drawing.Point(145, 360);
+        this.progressHeatmapLoading.BarAnimationElementThickness = 3;
+        this.progressHeatmapLoading.Location = new System.Drawing.Point(195, 370);
         this.progressHeatmapLoading.Name = "progressHeatmapLoading";
-        this.progressHeatmapLoading.Size = new System.Drawing.Size(200, 60);
+        this.progressHeatmapLoading.ShowCaption = false;
+        this.progressHeatmapLoading.ShowDescription = false;
+        this.progressHeatmapLoading.Size = new System.Drawing.Size(100, 40);
         this.progressHeatmapLoading.TabIndex = 22;
-        this.progressHeatmapLoading.Text = "progressPanel1";
         this.progressHeatmapLoading.Visible = false;
         // 
         // btnManualTime
@@ -205,8 +226,6 @@ partial class DashboardControl
         this.btnManualTime.Location = new System.Drawing.Point(300, 78);
         this.btnManualTime.Name = "btnManualTime";
         this.btnManualTime.Size = new System.Drawing.Size(80, 24);
-        this.btnManualTime.TabIndex = 20;
-        this.btnManualTime.Text = "+ Log Time";
         this.btnManualTime.TabIndex = 20;
         this.btnManualTime.Text = "+ Log Time";
         this.btnManualTime.ToolTip = "Manually add hours to Pixe.la";
@@ -381,6 +400,8 @@ partial class DashboardControl
         ((System.ComponentModel.ISupportInitialize)(this.pnlStats)).EndInit();
         this.pnlStats.ResumeLayout(false);
         this.pnlStats.PerformLayout();
+        ((System.ComponentModel.ISupportInitialize)(this.picPixelaHeatmap.Properties)).EndInit();
+        ((System.ComponentModel.ISupportInitialize)(this.picTimerBrand.Properties)).EndInit();
         ((System.ComponentModel.ISupportInitialize)(this.progressXP.Properties)).EndInit();
         this.ResumeLayout(false);
     }
@@ -410,4 +431,6 @@ partial class DashboardControl
     private DevExpress.XtraEditors.LabelControl lblStreakValue;
     private DevExpress.XtraEditors.LabelControl lblBest;
     private DevExpress.XtraEditors.LabelControl lblBestValue;
+    private DevExpress.XtraEditors.PictureEdit picTimerBrand;
+    private System.Windows.Forms.Timer tmrJourneyStream;
 }

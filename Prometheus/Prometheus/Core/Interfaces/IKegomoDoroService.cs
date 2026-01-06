@@ -46,4 +46,9 @@ public interface IKegomoDoroService
     /// Get the current configuration for a specific user
     /// </summary>
     Task<UserPreferences> GetConfigurationAsync(User? user = null);
+
+    /// <summary>
+    /// Synchronizes manual hours to the user's local KEGOMODORO time.csv
+    /// </summary>
+    Task<bool> AddManualTimeAsync(User user, double hours);
 }
