@@ -90,10 +90,21 @@ namespace KeganOS.Views
 
                     if (achievement.IsUnlocked)
                     {
-                        item.AppearanceItem.Normal.BackColor = ColorTranslator.FromHtml(achievement.Color);
-                        item.AppearanceItem.Normal.ForeColor = Color.White;
+                        var baseColor = ColorTranslator.FromHtml(achievement.Color);
+                        // Light background for normal state
+                        item.AppearanceItem.Normal.BackColor = Color.FromArgb(40, baseColor);
+                        item.AppearanceItem.Normal.ForeColor = Color.FromArgb(60, 60, 60);
                         item.AppearanceItem.Normal.Options.UseBackColor = true;
-                        elementDesc.Appearance.Normal.ForeColor = Color.FromArgb(220, 255, 255, 255);
+                        item.AppearanceItem.Normal.Options.UseForeColor = true;
+
+                        // Full color for hover state
+                        item.AppearanceItem.Hovered.BackColor = baseColor;
+                        item.AppearanceItem.Hovered.ForeColor = Color.White;
+                        item.AppearanceItem.Hovered.Options.UseBackColor = true;
+                        item.AppearanceItem.Hovered.Options.UseForeColor = true;
+
+                        elementDesc.Appearance.Normal.ForeColor = Color.FromArgb(150, 60, 60, 60);
+                        elementDesc.Appearance.Hovered.ForeColor = Color.FromArgb(220, 255, 255, 255);
                     }
                     else
                     {

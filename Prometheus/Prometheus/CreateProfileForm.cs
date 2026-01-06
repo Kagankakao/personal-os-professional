@@ -203,7 +203,6 @@ namespace KeganOS
             var user = new User
             {
                 DisplayName = displayName,
-                PersonalSymbol = txtSymbol.Text.Trim(),
                 GeminiApiKey = txtGeminiKey.Text.Trim(),
                 CreatedAt = DateTime.Now,
                 LastLoginAt = DateTime.Now
@@ -217,7 +216,7 @@ namespace KeganOS
 
             // Journal
             user.JournalFileName = !string.IsNullOrEmpty(_selectedJournalPath) 
-                ? Path.GetFileName(_selectedJournalPath) 
+                ? _selectedJournalPath 
                 : $"{displayName.Replace(" ", "_").ToLower()}.txt";
 
             // Pixela

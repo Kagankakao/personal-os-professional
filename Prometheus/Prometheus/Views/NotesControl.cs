@@ -28,6 +28,7 @@ namespace KeganOS.Views
         private float _pulseOpacity = 0.5f;
         private bool _pulseIncreasing = true;
         private int _hoverIndex = -1;
+        private System.Windows.Forms.Timer _tmrAutoSave;
 
         public NotesControl(INoteService noteService, IUserService userService)
         {
@@ -38,17 +39,33 @@ namespace KeganOS.Views
             _imagesFolder = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "KeganOS", "NoteImages");
-            Directory.CreateDirectory(_imagesFolder);
+            // Directory creation moved to OnLoad to prevent constructor crashes
             
             InitializeComponent();
+            
+            // Correction for "White Screen" issue: Force Dark Background
+            ApplyTheme();
+            
+            // Ensure child controls don't override with white skin
+            pnlHeader.Appearance.BackColor = Color.Transparent; 
+            pnlHeader.Appearance.Options.UseBackColor = true;
+            pnlHeader.BorderStyle = BorderStyles.NoBorder;
 
             // Wire up events
             this.listNotes.SelectedIndexChanged += ListNotes_SelectedIndexChanged;
             this.btnNewNote.Click += BtnNewNote_Click;
             this.btnSave.Click += BtnSave_Click;
             this.btnDelete.Click += BtnDelete_Click;
-            this.txtContent.EditValueChanged += TxtContent_EditValueChanged;
+            this.txtContent.EditValueChanged += (s, e) => { UpdateWordCount(); StartAutoSaveTimer(); };
+            this.txtTitle.EditValueChanged += (s, e) => { StartAutoSaveTimer(); };
             this.txtSearch.EditValueChanged += TxtSearch_EditValueChanged;
+            
+            // Search Debounce Timer
+            this.tmrSearchDebounce.Interval = 350;
+            this.tmrSearchDebounce.Tick += (s, e) => {
+                tmrSearchDebounce.Stop();
+                ApplyFilter();
+            };
             
             // Drag-drop events
             this.pnlImages.DragEnter += OnDragEnter;
@@ -97,13 +114,58 @@ namespace KeganOS.Views
             _tmrPulse.Start();
 
             this.pnlEditorFooter.Paint += PnlEditorFooter_Paint;
+
+            // Auto-Save Timer
+            _tmrAutoSave = new System.Windows.Forms.Timer { Interval = 2000 }; // 2 seconds
+            _tmrAutoSave.Tick += TmrAutoSave_Tick;
+
+            // UI Fix: Spacer to prevent overlap
+            var pnlSpacer = new PanelControl();
+            pnlSpacer.Height = 15;
+            pnlSpacer.Dock = DockStyle.Top;
+            pnlSpacer.BorderStyle = BorderStyles.NoBorder;
+            pnlSpacer.Appearance.BackColor = Color.Transparent;
+            pnlSpacer.Appearance.Options.UseBackColor = true;
+            
+            // Adjust Dock Order
+            this.pnlEditor.Controls.Add(pnlSpacer);
+            pnlSpacer.BringToFront(); // Ensure it acts relative to others
+            this.pnlImages.SendToBack();
+            this.txtTitle.SendToBack(); // Top-most doc
+            this.pnlEditorFooter.SendToBack(); // Bottom
+            
+            // Re-ordering logic to be precise:
+            // Controls.Add adds to the beginning of the list (z-order top).
+            // For Dock=Top, the last added control is at the Top? No, Reverse.
+            // Let's just create the spacer and ensure it sits between Title and Content.
+            // Content is Dock.Fill. Title is Dock.Top. Images is Dock.Top.
+            // If we add pnlSpacer (Dock.Top), it needs to be added *after* Title (so it's below it) or *before* Content.
+            
+            // Correct approach: Set the padding on the Content text box container? 
+            // Better: Add padding to the Dock=Top elements.
+            txtTitle.Padding = new Padding(0, 0, 0, 10);
         }
 
         protected override async void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             if (DesignMode) return;
-            await RefreshNotesListAsync();
+            
+            try 
+            {
+                // Ensure directory exists
+                if (!Directory.Exists(_imagesFolder))
+                {
+                    Directory.CreateDirectory(_imagesFolder);
+                }
+
+                await RefreshNotesListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error loading notes");
+                XtraMessageBox.Show($"Could not load notes: {ex.Message}", "Error");
+            }
         }
 
         private async System.Threading.Tasks.Task RefreshNotesListAsync()
@@ -132,9 +194,13 @@ namespace KeganOS.Views
             }
             else
             {
+                // Token-based search (AND logic)
+                var terms = filter.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                
                 _filteredNotes = _notes
-                    .Where(n => n.Title.ToLower().Contains(filter) || 
-                                (n.Content?.ToLower().Contains(filter) ?? false))
+                    .Where(n => terms.All(term => 
+                        n.Title.ToLower().Contains(term) || 
+                        (n.Content?.ToLower().Contains(term) ?? false)))
                     .OrderByDescending(n => n.LastModified)
                     .ToList();
             }
@@ -151,7 +217,8 @@ namespace KeganOS.Views
 
         private void TxtSearch_EditValueChanged(object? sender, EventArgs e)
         {
-            ApplyFilter();
+            tmrSearchDebounce.Stop();
+            tmrSearchDebounce.Start();
         }
 
         private void ListNotes_SelectedIndexChanged(object? sender, EventArgs e)
@@ -178,6 +245,7 @@ namespace KeganOS.Views
         {
             _currentNote = new NoteItem 
             { 
+                Id = Guid.NewGuid().ToString(),
                 Title = "", 
                 Content = "",
                 CreatedAt = DateTime.Now 
@@ -192,9 +260,37 @@ namespace KeganOS.Views
 
         private async void BtnSave_Click(object? sender, EventArgs e)
         {
+             await SaveCurrentNoteAsync(showFeedback: true);
+        }
+
+        private void StartAutoSaveTimer()
+        {
+            _tmrAutoSave.Stop();
+            _tmrAutoSave.Start();
+        }
+
+        private async void TmrAutoSave_Tick(object? sender, EventArgs e)
+        {
+            _tmrAutoSave.Stop();
+            if (_currentNote != null)
+            {
+               lblLastSaved.Text = "Saving...";
+               await SaveCurrentNoteAsync(showFeedback: false);
+            }
+        }
+
+        private async System.Threading.Tasks.Task SaveCurrentNoteAsync(bool showFeedback)
+        {
             if (_currentNote == null) 
             {
-                _currentNote = new NoteItem { CreatedAt = DateTime.Now };
+                _currentNote = new NoteItem { 
+                    Id = Guid.NewGuid().ToString(),
+                    CreatedAt = DateTime.Now 
+                };
+            }
+            if (string.IsNullOrEmpty(_currentNote.Id))
+            {
+                _currentNote.Id = Guid.NewGuid().ToString();
             }
 
             // Get title from input or first line
@@ -219,14 +315,23 @@ namespace KeganOS.Views
                 await RefreshNotesListAsync();
                 UpdateLastSaved();
                 
-                // Show subtle feedback
-                lblLastSaved.Text = "✓ Saved just now";
+                if (showFeedback)
+                {
+                    lblLastSaved.Text = "✓ Saved manually";
+                }
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to save note");
-                XtraMessageBox.Show("Failed to save note: " + ex.Message, "Error", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (showFeedback)
+                {
+                    XtraMessageBox.Show("Failed to save note: " + ex.Message, "Error", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    lblLastSaved.Text = "Save failed";
+                }
             }
         }
 
@@ -261,10 +366,6 @@ namespace KeganOS.Views
             }
         }
 
-        private void TxtContent_EditValueChanged(object? sender, EventArgs e)
-        {
-            UpdateWordCount();
-        }
 
         private void UpdateWordCount()
         {
@@ -314,10 +415,6 @@ namespace KeganOS.Views
             {
                 g.DrawLine(pen, 0, rect.Height - 1, rect.Width, rect.Height - 1);
             }
-
-            // Particle effect hint (static for now)
-            g.FillEllipse(Brushes.Cyan, rect.Width - 100, 15, 4, 4);
-            g.FillEllipse(Brushes.DeepSkyBlue, rect.Width - 120, 25, 3, 3);
         }
 
         private void ListNotes_DrawItem(object sender, ListBoxDrawItemEventArgs e)
@@ -571,6 +668,77 @@ namespace KeganOS.Views
                 {
                     _logger.Error(ex, "Failed to load image: {Path}", imagePath);
                 }
+            }
+        }
+        private void ApplyTheme()
+        {
+            Color darkBg = Color.FromArgb(20, 20, 25);
+            Color panelBg = Color.FromArgb(25, 25, 30);
+            Color textWhite = Color.WhiteSmoke;
+
+            // 1. Main Background
+            this.Appearance.BackColor = darkBg;
+            this.Appearance.Options.UseBackColor = true;
+
+            // 2. Split Container (if accessible)
+            if (splitMain != null)
+            {
+                splitMain.Appearance.BackColor = darkBg;
+                splitMain.Appearance.Options.UseBackColor = true;
+            }
+
+            // 3. Notes List Panel
+            if (pnlNotesList != null)
+            {
+                pnlNotesList.LookAndFeel.UseDefaultLookAndFeel = false;
+                pnlNotesList.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+                pnlNotesList.Appearance.BackColor = panelBg;
+                pnlNotesList.Appearance.Options.UseBackColor = true;
+                pnlNotesList.AppearanceCaption.ForeColor = textWhite;
+                pnlNotesList.BorderStyle = BorderStyles.NoBorder;
+            }
+
+            // 4. Note Editor Panel
+            if (pnlEditor != null)
+            {
+                pnlEditor.LookAndFeel.UseDefaultLookAndFeel = false;
+                pnlEditor.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+                pnlEditor.Appearance.BackColor = darkBg;
+                pnlEditor.Appearance.Options.UseBackColor = true;
+                pnlEditor.AppearanceCaption.ForeColor = textWhite;
+                pnlEditor.BorderStyle = BorderStyles.NoBorder;
+                pnlEditor.ShowCaption = false; 
+            }
+
+            // 5. Editors
+            if (txtTitle != null)
+            {
+                txtTitle.Properties.Appearance.BackColor = darkBg;
+                txtTitle.Properties.Appearance.ForeColor = textWhite;
+                txtTitle.Properties.BorderStyle = BorderStyles.NoBorder;
+            }
+
+            if (txtContent != null)
+            {
+                txtContent.Properties.Appearance.BackColor = darkBg;
+                txtContent.Properties.Appearance.ForeColor = textWhite;
+                txtContent.Properties.BorderStyle = BorderStyles.NoBorder;
+            }
+
+            // 6. List Box
+            if (listNotes != null)
+            {
+                listNotes.Appearance.BackColor = panelBg;
+                listNotes.Appearance.Options.UseBackColor = true;
+                listNotes.BorderStyle = BorderStyles.NoBorder;
+            }
+            
+            // 7. Search Box
+            if (txtSearch != null)
+            {
+                txtSearch.Properties.Appearance.BackColor = Color.FromArgb(40, 40, 45);
+                txtSearch.Properties.Appearance.ForeColor = textWhite;
+                txtSearch.Properties.BorderStyle = BorderStyles.Simple;
             }
         }
     }

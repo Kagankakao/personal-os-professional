@@ -31,6 +31,7 @@ partial class SettingsControl
         this.colorPickBack = new DevExpress.XtraEditors.ColorPickEdit();
         this.btnSaveSettings = new DevExpress.XtraEditors.SimpleButton();
         this.btnLogout = new DevExpress.XtraEditors.SimpleButton();
+        this.btnDeleteUser = new DevExpress.XtraEditors.SimpleButton();
         
         // API Keys Group
         this.groupApiKeys = new DevExpress.XtraEditors.GroupControl();
@@ -272,11 +273,23 @@ partial class SettingsControl
         this.btnLogout.TabIndex = 4;
         this.btnLogout.Text = "Logout";
         
+        // btnDeleteUser
+        this.btnDeleteUser.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
+        this.btnDeleteUser.Appearance.ForeColor = System.Drawing.Color.Red;
+        this.btnDeleteUser.Appearance.Options.UseFont = true;
+        this.btnDeleteUser.Appearance.Options.UseForeColor = true;
+        this.btnDeleteUser.Location = new System.Drawing.Point(300, 410);
+        this.btnDeleteUser.Name = "btnDeleteUser";
+        this.btnDeleteUser.Size = new System.Drawing.Size(110, 40);
+        this.btnDeleteUser.TabIndex = 5;
+        this.btnDeleteUser.Text = "Delete User";
+        
         // Add controls to scrollContainer
         this.scrollContainer.Controls.Add(this.groupKegomoDoro);
         this.scrollContainer.Controls.Add(this.groupApiKeys);
         this.scrollContainer.Controls.Add(this.groupBackup);
         this.scrollContainer.Controls.Add(this.btnSaveSettings);
+        this.scrollContainer.Controls.Add(this.btnDeleteUser);
         this.scrollContainer.Controls.Add(this.btnLogout);
         
         // SettingsControl
@@ -346,4 +359,5 @@ partial class SettingsControl
     // Buttons
     private DevExpress.XtraEditors.SimpleButton btnSaveSettings;
     private DevExpress.XtraEditors.SimpleButton btnLogout;
+    private DevExpress.XtraEditors.SimpleButton btnDeleteUser;
 }

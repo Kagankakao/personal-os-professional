@@ -65,12 +65,11 @@ public class UserService : IUserService
         using var conn = _db.GetConnection();
         var cmd = conn.CreateCommand();
         cmd.CommandText = @"
-            INSERT INTO Users (DisplayName, PersonalSymbol, AvatarPath, JournalFileName, PixelaUsername, PixelaToken, PixelaGraphId, GeminiApiKey)
-            VALUES (@name, @symbol, @avatar, @journal, @pxUser, @pxToken, @pxGraph, @gemini);
+            INSERT INTO Users (DisplayName, AvatarPath, JournalFileName, PixelaUsername, PixelaToken, PixelaGraphId, GeminiApiKey)
+            VALUES (@name, @avatar, @journal, @pxUser, @pxToken, @pxGraph, @gemini);
             SELECT last_insert_rowid();";
 
         cmd.Parameters.AddWithValue("@name", user.DisplayName);
-        cmd.Parameters.AddWithValue("@symbol", user.PersonalSymbol ?? "");
         cmd.Parameters.AddWithValue("@avatar", user.AvatarPath ?? "");
         cmd.Parameters.AddWithValue("@journal", user.JournalFileName);
         cmd.Parameters.AddWithValue("@pxUser", user.PixelaUsername ?? (object)DBNull.Value);
@@ -106,7 +105,6 @@ public class UserService : IUserService
         cmd.CommandText = @"
             UPDATE Users SET 
                 DisplayName = @name,
-                PersonalSymbol = @symbol,
                 AvatarPath = @avatar,
                 JournalFileName = @journal,
                 PixelaUsername = @pxUser,
@@ -122,7 +120,6 @@ public class UserService : IUserService
 
         cmd.Parameters.AddWithValue("@id", user.Id);
         cmd.Parameters.AddWithValue("@name", user.DisplayName);
-        cmd.Parameters.AddWithValue("@symbol", user.PersonalSymbol ?? "");
         cmd.Parameters.AddWithValue("@avatar", user.AvatarPath ?? "");
         cmd.Parameters.AddWithValue("@journal", user.JournalFileName);
         cmd.Parameters.AddWithValue("@pxUser", user.PixelaUsername ?? (object)DBNull.Value);
@@ -139,21 +136,71 @@ public class UserService : IUserService
 
     public async Task DeleteUserAsync(int id)
     {
-        _logger.Warning("Deleting user {Id}", id);
+        _logger.Warning("Deleting user {Id} and all associated data", id);
 
         using var conn = _db.GetConnection();
-        
-        // Delete preferences first
-        var prefCmd = conn.CreateCommand();
-        prefCmd.CommandText = "DELETE FROM UserPreferences WHERE UserId = @id";
-        prefCmd.Parameters.AddWithValue("@id", id);
-        await prefCmd.ExecuteNonQueryAsync();
+        using var transaction = conn.BeginTransaction();
 
-        // Delete user
-        var cmd = conn.CreateCommand();
-        cmd.CommandText = "DELETE FROM Users WHERE Id = @id";
-        cmd.Parameters.AddWithValue("@id", id);
-        await cmd.ExecuteNonQueryAsync();
+        try 
+        {
+            // 1. Delete associated data first to avoid FK issues (if any)
+            
+            // Delete Journal Entries
+            var journalCmd = conn.CreateCommand();
+            journalCmd.Transaction = transaction;
+            journalCmd.CommandText = "DELETE FROM JournalEntries WHERE UserId = @id";
+            journalCmd.Parameters.AddWithValue("@id", id);
+            await journalCmd.ExecuteNonQueryAsync();
+
+            // Delete Notes & History
+            var notesCmd = conn.CreateCommand();
+            notesCmd.Transaction = transaction;
+            notesCmd.CommandText = "DELETE FROM NoteHistory WHERE NoteId IN (SELECT Id FROM Notes WHERE UserId = @id)";
+            notesCmd.Parameters.AddWithValue("@id", id);
+            await notesCmd.ExecuteNonQueryAsync();
+
+            var notesDelCmd = conn.CreateCommand();
+            notesDelCmd.Transaction = transaction;
+            notesDelCmd.CommandText = "DELETE FROM Notes WHERE UserId = @id";
+            notesDelCmd.Parameters.AddWithValue("@id", id);
+            await notesDelCmd.ExecuteNonQueryAsync();
+
+            // Delete Conversations & Chat Messages
+            var chatCmd = conn.CreateCommand();
+            chatCmd.Transaction = transaction;
+            chatCmd.CommandText = "DELETE FROM ChatMessages WHERE ConversationId IN (SELECT Id FROM Conversations WHERE UserId = @id)";
+            chatCmd.Parameters.AddWithValue("@id", id);
+            await chatCmd.ExecuteNonQueryAsync();
+
+            var convCmd = conn.CreateCommand();
+            convCmd.Transaction = transaction;
+            convCmd.CommandText = "DELETE FROM Conversations WHERE UserId = @id";
+            convCmd.Parameters.AddWithValue("@id", id);
+            await convCmd.ExecuteNonQueryAsync();
+
+            // Delete preferences
+            var prefCmd = conn.CreateCommand();
+            prefCmd.Transaction = transaction;
+            prefCmd.CommandText = "DELETE FROM UserPreferences WHERE UserId = @id";
+            prefCmd.Parameters.AddWithValue("@id", id);
+            await prefCmd.ExecuteNonQueryAsync();
+
+            // 2. Finally delete the user
+            var userCmd = conn.CreateCommand();
+            userCmd.Transaction = transaction;
+            userCmd.CommandText = "DELETE FROM Users WHERE Id = @id";
+            userCmd.Parameters.AddWithValue("@id", id);
+            await userCmd.ExecuteNonQueryAsync();
+
+            transaction.Commit();
+            _logger.Information("User {Id} deleted successfully", id);
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            _logger.Error(ex, "Failed to delete user {Id}, transaction rolled back", id);
+            throw;
+        }
     }
 
     public async Task<UserPreferences> GetPreferencesAsync(int userId)
@@ -304,7 +351,6 @@ public class UserService : IUserService
         {
             Id = reader.GetInt32(reader.GetOrdinal("Id")),
             DisplayName = reader.GetString(reader.GetOrdinal("DisplayName")),
-            PersonalSymbol = reader.IsDBNull(reader.GetOrdinal("PersonalSymbol")) ? "" : reader.GetString(reader.GetOrdinal("PersonalSymbol")),
             AvatarPath = reader.IsDBNull(reader.GetOrdinal("AvatarPath")) ? "" : reader.GetString(reader.GetOrdinal("AvatarPath")),
             JournalFileName = reader.GetString(reader.GetOrdinal("JournalFileName")),
             PixelaUsername = reader.IsDBNull(reader.GetOrdinal("PixelaUsername")) ? null : reader.GetString(reader.GetOrdinal("PixelaUsername")),

@@ -44,6 +44,7 @@ namespace KeganOS.Views
             this.btnCreateBackup.Click += BtnCreateBackup_Click;
             this.btnRestoreBackup.Click += BtnRestoreBackup_Click;
             this.btnLogout.Click += BtnLogout_Click;
+            this.btnDeleteUser.Click += BtnDeleteUser_Click;
             this.btnShowCredentials.Click += BtnShowCredentials_Click;
             this.btnOpenBackupFolder.Click += BtnOpenBackupFolder_Click;
             this.pnlHeader.Paint += PnlHeader_Paint;
@@ -284,6 +285,46 @@ namespace KeganOS.Views
             if (confirm == DialogResult.Yes)
             {
                 LogoutRequested?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        
+        private async void BtnDeleteUser_Click(object? sender, EventArgs e)
+        {
+            if (_currentUser == null) return;
+
+            var confirm = XtraMessageBox.Show(
+                $"Are you sure you want to delete your entire profile ('{_currentUser.DisplayName}')?\n\nThis will DELETE:\n- All focus statistics\n- All achievements\n- All journal entries\n- All local saved files\n\nTHIS ACTION CANNOT BE UNDONE.",
+                "CRITICAL: Confirm Profile Deletion",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Stop);
+
+            if (confirm == DialogResult.Yes)
+            {
+                var finalConfirm = XtraMessageBox.Show(
+                    "Final warning: Are you ABSOLUTELY certain? All your data will be permanently wiped.",
+                    "Verify Deletion",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (finalConfirm == DialogResult.Yes)
+                {
+                    _logger.Information("User requested account deletion: {UserId}", _currentUser.Id);
+                    
+                    try 
+                    {
+                        await _userService.DeleteUserAsync(_currentUser.Id);
+                        
+                        XtraMessageBox.Show("Your profile has been deleted. Returning to profile selection.", "Profile Deleted");
+                        
+                        // Trigger logout to return to selection screen
+                        LogoutRequested?.Invoke(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Failed to delete user account");
+                        XtraMessageBox.Show("An error occurred while deleting your profile: " + ex.Message, "Error");
+                    }
+                }
             }
         }
         

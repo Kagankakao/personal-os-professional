@@ -15,6 +15,7 @@ partial class NotesControl
 
     private void InitializeComponent()
     {
+        this.components = new System.ComponentModel.Container();
         // Initializations
         this.pnlHeader = new DevExpress.XtraEditors.PanelControl();
         this.lblTitle = new DevExpress.XtraEditors.LabelControl();
@@ -33,6 +34,7 @@ partial class NotesControl
         this.lblLastSaved = new DevExpress.XtraEditors.LabelControl();
         this.btnSave = new DevExpress.XtraEditors.SimpleButton();
         this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
+        this.tmrSearchDebounce = new System.Windows.Forms.Timer(this.components);
         
         ((System.ComponentModel.ISupportInitialize)(this.pnlHeader)).BeginInit();
         this.pnlHeader.SuspendLayout();
@@ -88,7 +90,7 @@ partial class NotesControl
         
         // New Note Button
         this.btnNewNote.Appearance.Font = new System.Drawing.Font("Segoe UI Semibold", 10F);
-        this.btnNewNote.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 255, 127); // Spring Green
+        this.btnNewNote.Appearance.ForeColor = System.Drawing.Color.Black; // Professional Black
         this.btnNewNote.Appearance.Options.UseFont = true;
         this.btnNewNote.Appearance.Options.UseForeColor = true;
         this.btnNewNote.Anchor = System.Windows.Forms.AnchorStyles.Right;
@@ -160,7 +162,9 @@ partial class NotesControl
         this.txtTitle.Location = new System.Drawing.Point(2, 25);
         this.txtTitle.Name = "txtTitle";
         this.txtTitle.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI Light", 24F);
+        this.txtTitle.Properties.Appearance.ForeColor = System.Drawing.Color.Black;
         this.txtTitle.Properties.Appearance.Options.UseFont = true;
+        this.txtTitle.Properties.Appearance.Options.UseForeColor = true;
         this.txtTitle.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.txtTitle.Properties.NullValuePrompt = "Deep thoughts begin here...";
         this.txtTitle.Properties.NullValuePromptShowForEmptyValue = true;
@@ -172,7 +176,9 @@ partial class NotesControl
         this.txtContent.Location = new System.Drawing.Point(2, 75);
         this.txtContent.Name = "txtContent";
         this.txtContent.Properties.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
+        this.txtContent.Properties.Appearance.ForeColor = System.Drawing.Color.Black;
         this.txtContent.Properties.Appearance.Options.UseFont = true;
+        this.txtContent.Properties.Appearance.Options.UseForeColor = true;
         this.txtContent.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.txtContent.Properties.NullValuePrompt = "The mind is like a parachute. It doesn't work if it isn't open...";
         this.txtContent.Properties.NullValuePromptShowForEmptyValue = true;
@@ -236,9 +242,9 @@ partial class NotesControl
         this.btnDelete.Appearance.ForeColor = System.Drawing.Color.FromArgb(244, 67, 54);
         this.btnDelete.Appearance.Options.UseFont = true;
         this.btnDelete.Appearance.Options.UseForeColor = true;
-        this.btnDelete.Location = new System.Drawing.Point(430, 10);
+        this.btnDelete.Location = new System.Drawing.Point(450, 10);
         this.btnDelete.Name = "btnDelete";
-        this.btnDelete.Size = new System.Drawing.Size(100, 32);
+        this.btnDelete.Size = new System.Drawing.Size(90, 32);
         this.btnDelete.TabIndex = 2;
         this.btnDelete.Text = "🗑 Delete";
         
@@ -248,7 +254,7 @@ partial class NotesControl
         this.btnSave.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 188, 212);
         this.btnSave.Appearance.Options.UseFont = true;
         this.btnSave.Appearance.Options.UseForeColor = true;
-        this.btnSave.Location = new System.Drawing.Point(545, 10);
+        this.btnSave.Location = new System.Drawing.Point(550, 10);
         this.btnSave.Name = "btnSave";
         this.btnSave.Size = new System.Drawing.Size(100, 32);
         this.btnSave.TabIndex = 3;
@@ -308,8 +314,9 @@ partial class NotesControl
     private DevExpress.XtraEditors.PanelControl pnlEditorFooter;
     private DevExpress.XtraEditors.LabelControl lblWordCount;
     private DevExpress.XtraEditors.LabelControl lblLastSaved;
-    private DevExpress.XtraEditors.SimpleButton btnSave;
     private DevExpress.XtraEditors.SimpleButton btnDelete;
+    private DevExpress.XtraEditors.SimpleButton btnSave;
     private System.Windows.Forms.FlowLayoutPanel pnlImages;
     private System.Windows.Forms.Label lblDropHint;
+    private System.Windows.Forms.Timer tmrSearchDebounce;
 }

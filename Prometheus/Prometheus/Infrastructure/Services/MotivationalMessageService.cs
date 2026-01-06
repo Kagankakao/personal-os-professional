@@ -57,35 +57,23 @@ public class MotivationalMessageService : IMotivationalMessageService
                 };
             }
 
-            // Try to get a quote from user's journal
+            // Get random quotes for the ticker
             var entries = await _journalService.ReadEntriesAsync(user);
             if (entries.Any())
             {
                 var quotes = await ExtractQuotesAsync(entries);
                 if (quotes.Any())
                 {
-                    var randomQuote = quotes.ElementAt(Random.Shared.Next(quotes.Count()));
+                    // separator for news ticker
+                    // separator for news ticker
+                    string separator = "   ///   ";
+                    string combinedQuotes = string.Join(separator, quotes); 
                     
-                    // If AI is available, interpret the quote
-                    if (_aiProvider != null && _aiProvider.IsAvailable)
-                    {
-                        var interpretation = await _aiProvider.InterpretQuoteAsync(
-                            randomQuote, 
-                            $"From {user.DisplayName}'s personal journal");
-                        
-                        return new MotivationalMessage
-                        {
-                            Type = MotivationalMessageType.AIInterpretation,
-                            Message = interpretation,
-                            SourceQuote = randomQuote
-                        };
-                    }
-
                     return new MotivationalMessage
                     {
                         Type = MotivationalMessageType.OwnQuote,
-                        Message = $"\"{randomQuote}\"",
-                        SourceQuote = randomQuote
+                        Message = combinedQuotes + separator,
+                        SourceDate = DateTime.Today
                     };
                 }
             }
@@ -150,7 +138,7 @@ public class MotivationalMessageService : IMotivationalMessageService
             var lines = entry.NoteText.Split('\n')
                 .Select(l => l.Trim())
                 .Where(l => !string.IsNullOrEmpty(l))
-                .Where(l => l.Length > 20 && l.Length < 200) // Reasonable quote length
+                .Where(l => l.Length > 10 && l.Length < 300) // Broader length range
                 .Where(l => !l.StartsWith("##") && !l.StartsWith("-")) // Not headers or lists
                 .Where(l => !l.Contains("http") && !l.Contains("@")) // Not links/emails
                 .Where(l => l.Length > 0 && char.IsLetter(l[0])); // Starts with letter
@@ -158,10 +146,11 @@ public class MotivationalMessageService : IMotivationalMessageService
             quotes.AddRange(lines);
         }
 
-        // Shuffle and take top quotes
+        // Shuffle and take top quotes (increased to 50 for longer stream)
         var selectedQuotes = quotes
+            .Distinct() // Avoid duplicates
             .OrderBy(_ => Random.Shared.Next())
-            .Take(10)
+            .Take(50)
             .AsEnumerable();
 
         _logger.Debug("Extracted {Count} quotes", selectedQuotes.Count());

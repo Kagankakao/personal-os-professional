@@ -15,14 +15,29 @@ public partial class MainDashboardForm : FluentDesignForm
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IUserService _userService;
+    private readonly IAchievementService _achievementService;
     private readonly ILogger _logger = Log.ForContext<MainDashboardForm>();
+    private DevExpress.XtraBars.Alerter.AlertControl _alertControl;
     
     private Control? _currentView;
 
-    public MainDashboardForm(IServiceProvider serviceProvider, IUserService userService)
+    public MainDashboardForm(IServiceProvider serviceProvider, IUserService userService, IAchievementService achievementService)
     {
         _serviceProvider = serviceProvider;
         _userService = userService;
+        _achievementService = achievementService;
+        
+        // Setup Alert Control
+        _alertControl = new DevExpress.XtraBars.Alerter.AlertControl();
+        _alertControl.FormLocation = DevExpress.XtraBars.Alerter.AlertFormLocation.BottomRight;
+        _alertControl.AutoFormDelay = 5000;
+        
+        // Subscribe to achievements
+        _achievementService.OnAchievementUnlocked += (s, a) => {
+            this.Invoke((MethodInvoker)delegate {
+                _alertControl.Show(this, "Achievement Unlocked!", $"{a.Icon} - {a.Name}\n{a.Description}");
+            });
+        };
         
         // Apply dark theme before InitializeComponent
         UserLookAndFeel.Default.SetSkinStyle(SkinStyle.WXICompact);
@@ -110,6 +125,7 @@ public partial class MainDashboardForm : FluentDesignForm
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to show view {ViewType}", typeof(T).Name);
+            XtraMessageBox.Show($"Failed to load view {typeof(T).Name}:\n{ex.Message}\n\nCheck logs for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
     
@@ -120,6 +136,23 @@ public partial class MainDashboardForm : FluentDesignForm
         // Close this form with Cancel result to trigger profile selection in Program.cs
         this.DialogResult = DialogResult.Retry;
         this.Close();
+    }
+
+    public void ShowModule(string moduleName)
+    {
+        _logger.Information("Switching to module: {ModuleName}", moduleName);
+        switch (moduleName)
+        {
+            case "Dashboard": ShowView<Views.DashboardControl>(); break;
+            case "Prometheus AI": ShowView<Views.ChatControl>(); break;
+            case "Neural Notes": ShowView<Views.NotesControl>(); break;
+            case "Daily Journal": ShowView<Views.JournalControl>(); break;
+            case "Achievements": ShowView<Views.AchievementsControl>(); break;
+            case "Analytics": ShowView<Views.AnalyticsControl>(); break;
+            case "Theme Palace": ShowView<Views.ThemeControl>(); break;
+            case "Settings": ShowView<Views.SettingsControl>(); break;
+            default: _logger.Warning("Unknown module: {ModuleName}", moduleName); break;
+        }
     }
 }
 

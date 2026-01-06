@@ -17,6 +17,7 @@ partial class AnalyticsControl
     {
         this.pnlHeader = new DevExpress.XtraEditors.PanelControl();
         this.lblTitle = new DevExpress.XtraEditors.LabelControl();
+        this.btnConsultAI = new DevExpress.XtraEditors.SimpleButton();
         this.chartWeeklyProgress = new DevExpress.XtraCharts.ChartControl();
         this.pnlSummary = new DevExpress.XtraEditors.PanelControl();
         this.lblTotalHours = new DevExpress.XtraEditors.LabelControl();
@@ -31,6 +32,7 @@ partial class AnalyticsControl
         
         // pnlHeader
         this.pnlHeader.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+        this.pnlHeader.Controls.Add(this.btnConsultAI);
         this.pnlHeader.Controls.Add(this.lblTitle);
         this.pnlHeader.Dock = System.Windows.Forms.DockStyle.Top;
         this.pnlHeader.Location = new System.Drawing.Point(20, 20);
@@ -58,6 +60,19 @@ partial class AnalyticsControl
         this.lblTitle.Size = new System.Drawing.Size(180, 40);
         this.lblTitle.TabIndex = 0;
         this.lblTitle.Text = "Focus Evolution";
+        // 
+        // btnConsultAI
+        // 
+        this.btnConsultAI.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+        this.btnConsultAI.Appearance.ForeColor = System.Drawing.Color.DimGray;
+        this.btnConsultAI.Appearance.Options.UseFont = true;
+        this.btnConsultAI.Appearance.Options.UseForeColor = true;
+        this.btnConsultAI.Location = new System.Drawing.Point(430, 10);
+        this.btnConsultAI.Name = "btnConsultAI";
+        this.btnConsultAI.Size = new System.Drawing.Size(110, 30);
+        this.btnConsultAI.TabIndex = 1;
+        this.btnConsultAI.Text = "Consult AI";
+        this.btnConsultAI.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
         // pnlSummary
         this.pnlSummary.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.pnlSummary.Controls.Add(this.lblAverageSession);
@@ -72,7 +87,7 @@ partial class AnalyticsControl
         // lblTotalHours
         // 
         this.lblTotalHours.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
-        this.lblTotalHours.Appearance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
+        this.lblTotalHours.Appearance.ForeColor = System.Drawing.Color.DarkGreen;
         this.lblTotalHours.Appearance.Options.UseFont = true;
         this.lblTotalHours.Appearance.Options.UseForeColor = true;
         this.lblTotalHours.Location = new System.Drawing.Point(10, 10);
@@ -84,7 +99,7 @@ partial class AnalyticsControl
         // lblTotalSessions
         // 
         this.lblTotalSessions.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
-        this.lblTotalSessions.Appearance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
+        this.lblTotalSessions.Appearance.ForeColor = System.Drawing.Color.DarkGreen;
         this.lblTotalSessions.Appearance.Options.UseFont = true;
         this.lblTotalSessions.Appearance.Options.UseForeColor = true;
         this.lblTotalSessions.Location = new System.Drawing.Point(10, 35);
@@ -96,7 +111,7 @@ partial class AnalyticsControl
         // lblAverageSession
         // 
         this.lblAverageSession.Appearance.Font = new System.Drawing.Font("Segoe UI", 12F);
-        this.lblAverageSession.Appearance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(200)))), ((int)(((byte)(200)))), ((int)(((byte)(200)))));
+        this.lblAverageSession.Appearance.ForeColor = System.Drawing.Color.DarkGreen;
         this.lblAverageSession.Appearance.Options.UseFont = true;
         this.lblAverageSession.Appearance.Options.UseForeColor = true;
         this.lblAverageSession.Location = new System.Drawing.Point(10, 60);
@@ -126,6 +141,7 @@ partial class AnalyticsControl
 
     private DevExpress.XtraEditors.PanelControl pnlHeader;
     private DevExpress.XtraEditors.LabelControl lblTitle;
+    private DevExpress.XtraEditors.SimpleButton btnConsultAI;
     private DevExpress.XtraCharts.ChartControl chartWeeklyProgress;
     private DevExpress.XtraEditors.PanelControl pnlSummary;
     private DevExpress.XtraEditors.LabelControl lblTotalHours;

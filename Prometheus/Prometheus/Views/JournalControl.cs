@@ -105,11 +105,11 @@ namespace KeganOS.Views
             var todayEntry = _entries.FirstOrDefault(e => e.Date.Date == DateTime.Now.Date);
             if (todayEntry != null && todayEntry.TimeWorked.HasValue)
             {
-                lblFocusMetric.Text = $"FOCUS: {todayEntry.TimeWorked.Value:hh\\:mm\\:ss}";
+                lblFocusMetric.Text = $"{todayEntry.TimeWorked.Value:hh\\:mm\\:ss}";
             }
             else
             {
-                lblFocusMetric.Text = "FOCUS: 00:00:00";
+                lblFocusMetric.Text = "00:00:00";
             }
         }
 
@@ -195,7 +195,7 @@ namespace KeganOS.Views
             if (entry.TimeWorked.HasValue)
             {
                 using var fontFocus = new Font("Segoe UI", 8, FontStyle.Bold);
-                e.Cache.DrawString($"FOCUS: {entry.TimeWorked.Value:hh\\:mm\\:ss}", fontFocus, Brushes.Cyan, rect.X + 15, rect.Y + 32);
+                e.Cache.DrawString($"{entry.TimeWorked.Value:hh\\:mm\\:ss}", fontFocus, Brushes.DarkGreen, rect.X + 15, rect.Y + 32);
             }
 
             // 4. Draw Note Preview
@@ -204,7 +204,8 @@ namespace KeganOS.Views
 
             using (var fontNote = new Font("Segoe UI", 9))
             {
-                e.Cache.DrawString(previewText, fontNote, Brushes.DimGray, new Rectangle(rect.X + 15, rect.Y + 52, rect.Width - 30, 40), StringFormat.GenericDefault);
+                var noteText = (entry.NoteText ?? "").Replace("[Manual Log]", "").Trim();
+                e.Cache.DrawString(noteText, fontNote, Brushes.DimGray, new RectangleF(rect.X + 15, rect.Y + 50, rect.Width - 30, rect.Height - 60));
             }
 
             // 5. Draw Mood Badge
@@ -214,7 +215,7 @@ namespace KeganOS.Views
                 Color moodColor = Color.Gray;
                 
                 // Aesthetic color coding
-                if (mood.Contains("Productive") || mood.Contains("Focused")) moodColor = Color.Cyan;
+                if (mood.Contains("Productive") || mood.Contains("Focused")) moodColor = Color.DarkGreen;
                 else if (mood.Contains("Inspired") || mood.Contains("Peaceful")) moodColor = Color.Gold;
                 else if (mood.Contains("Anxious") || mood.Contains("Tired")) moodColor = Color.Crimson;
 

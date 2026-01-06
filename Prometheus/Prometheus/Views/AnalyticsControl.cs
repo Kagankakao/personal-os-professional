@@ -29,9 +29,54 @@ namespace KeganOS.Views
             InitializeComponent();
             
             // Wire up glassmorphism paint
+            // Wire up glassmorphism paint
             this.pnlHeader.Paint += PnlHeader_Paint;
+            
+            if (this.btnConsultAI != null)
+                this.btnConsultAI.Click += BtnConsultAI_Click;
         }
 
+        private async void BtnConsultAI_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var user = await _userService.GetCurrentUserAsync();
+                if (user == null) return;
+                
+                btnConsultAI.Enabled = false;
+                btnConsultAI.Text = "Generating...";
+
+                var report = await _analyticsService.GenerateInsightAsync(user, DateTime.Today, "WeeklyReport");
+                
+                // Show in a nice dialog
+                using var dlg = new XtraForm();
+                dlg.Text = "Prometheus Weekly Report";
+                dlg.Size = new Size(500, 600);
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                
+                var memo = new MemoEdit();
+                memo.Dock = DockStyle.Fill;
+                memo.Properties.ReadOnly = true;
+                memo.Text = report;
+                memo.Properties.Appearance.Font = new Font("Segoe UI", 10);
+                
+                dlg.Controls.Add(memo);
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to consult AI");
+                XtraMessageBox.Show("Failed to consult AI: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (btnConsultAI != null)
+                {
+                    btnConsultAI.Enabled = true;
+                    btnConsultAI.Text = "Consult AI";
+                }
+            }
+        }
 
         protected override async void OnLoad(EventArgs e)
         {
@@ -73,7 +118,7 @@ namespace KeganOS.Views
                 if (series.View is AreaSeriesView view)
                 {
                     view.Transparency = 150;
-                    view.Color = Color.FromArgb(135, 206, 235);
+                    view.Color = Color.DarkGreen;
                     view.Border.Visibility = DevExpress.Utils.DefaultBoolean.True;
                 }
 

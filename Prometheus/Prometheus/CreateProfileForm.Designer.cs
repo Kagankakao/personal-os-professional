@@ -20,8 +20,6 @@ namespace KeganOS
             this.btnBrowseAvatar = new DevExpress.XtraEditors.SimpleButton();
             this.lblDisplayName = new DevExpress.XtraEditors.LabelControl();
             this.txtDisplayName = new DevExpress.XtraEditors.TextEdit();
-            this.lblSymbol = new DevExpress.XtraEditors.LabelControl();
-            this.txtSymbol = new DevExpress.XtraEditors.TextEdit();
             
             this.groupJournal = new DevExpress.XtraEditors.GroupControl();
             this.lblJournalPath = new DevExpress.XtraEditors.LabelControl();
@@ -47,7 +45,6 @@ namespace KeganOS
             this.groupIdentity.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picAvatar.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtDisplayName.Properties)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.txtSymbol.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupJournal)).BeginInit();
             this.groupJournal.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.groupPixela)).BeginInit();
@@ -67,8 +64,6 @@ namespace KeganOS
             this.groupIdentity.Controls.Add(this.btnBrowseAvatar);
             this.groupIdentity.Controls.Add(this.lblDisplayName);
             this.groupIdentity.Controls.Add(this.txtDisplayName);
-            this.groupIdentity.Controls.Add(this.lblSymbol);
-            this.groupIdentity.Controls.Add(this.txtSymbol);
             this.groupIdentity.Location = new System.Drawing.Point(12, 12);
             this.groupIdentity.Name = "groupIdentity";
             this.groupIdentity.Size = new System.Drawing.Size(376, 140);
@@ -101,18 +96,6 @@ namespace KeganOS
             this.txtDisplayName.Size = new System.Drawing.Size(260, 20);
             this.txtDisplayName.TabIndex = 2;
 
-            // lblSymbol
-            this.lblSymbol.Location = new System.Drawing.Point(100, 80);
-            this.lblSymbol.Name = "lblSymbol";
-            this.lblSymbol.Size = new System.Drawing.Size(76, 13);
-            this.lblSymbol.Text = "Personal Symbol:";
-
-            // txtSymbol
-            this.txtSymbol.Location = new System.Drawing.Point(100, 95);
-            this.txtSymbol.Name = "txtSymbol";
-            this.txtSymbol.Size = new System.Drawing.Size(260, 20);
-            this.txtSymbol.TabIndex = 3;
-            this.txtSymbol.Properties.NullValuePrompt = "🦭";
 
             // 
             // groupJournal
@@ -268,7 +251,6 @@ namespace KeganOS
             this.groupIdentity.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picAvatar.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtDisplayName.Properties)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.txtSymbol.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.groupJournal)).EndInit();
             this.groupJournal.ResumeLayout(false);
             this.groupJournal.PerformLayout();
@@ -290,8 +272,6 @@ namespace KeganOS
         private DevExpress.XtraEditors.SimpleButton btnBrowseAvatar;
         private DevExpress.XtraEditors.LabelControl lblDisplayName;
         private DevExpress.XtraEditors.TextEdit txtDisplayName;
-        private DevExpress.XtraEditors.LabelControl lblSymbol;
-        private DevExpress.XtraEditors.TextEdit txtSymbol;
         
         private DevExpress.XtraEditors.GroupControl groupJournal;
         private DevExpress.XtraEditors.LabelControl lblJournalPath;

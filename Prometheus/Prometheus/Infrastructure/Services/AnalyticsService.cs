@@ -14,15 +14,18 @@ public class AnalyticsService : IAnalyticsService
     private readonly IPixelaService _pixelaService;
     private readonly IUserService _userService;
     private readonly IKegomoDoroService _kegomoDoroService;
+    private readonly IAchievementService _achievementService;
 
     public AnalyticsService(IJournalService journalService, IAIProvider aiProvider, 
-        IPixelaService pixelaService, IUserService userService, IKegomoDoroService kegomoDoroService)
+        IPixelaService pixelaService, IUserService userService, IKegomoDoroService kegomoDoroService,
+        IAchievementService achievementService)
     {
         _journalService = journalService;
         _aiProvider = aiProvider;
         _pixelaService = pixelaService;
         _userService = userService;
         _kegomoDoroService = kegomoDoroService;
+        _achievementService = achievementService;
     }
 
     public async Task<Dictionary<DayOfWeek, double>> GetWeeklyDataAsync(User user, DateTime weekStartDate)
@@ -107,9 +110,10 @@ public class AnalyticsService : IAnalyticsService
 
             string prompt = insightType switch
             {
-                "Notes" => "Summarize the key topics and projects I worked on this week based on my journal entries. Bullet points preferred.",
-                "Focus" => "Analyze my productivity and focus this week. Identify patterns in when I worked and what I accomplished. Give constructive feedback.",
-                "Life" => "Based on my journal, offer some philosophical or life advice relevant to my current journey. Be encouraging and wise.",
+                "Notes" => "Summarize key topics/projects. Bullet points only. Concise.",
+                "Focus" => "Analyze productivity patterns. Constructive feedback. Bullet points. Concise.",
+                "Life" => "Brief philosophical advice based on my week. Encouraging. Max 3 sentences.",
+                "WeeklyReport" => "Generate a professional Weekly Progress Report. Sections: Key Achievements, Focus Analysis, Recommendations. Bullet points. Professional tone. Max 200 words.",
                 _ => "Give me query-specific insights."
             };
 
@@ -182,6 +186,9 @@ public class AnalyticsService : IAnalyticsService
             // Add some XP (100 XP per hour)
             user.XP += (long)(hours * 100); 
             await _userService.UpdateUserAsync(user);
+
+            // Check Achievements
+            await _achievementService.CheckAchievementsAsync(user);
 
             // 2. Update Pixela (Online Heatmap)
             if (_pixelaService.IsConfigured(user))

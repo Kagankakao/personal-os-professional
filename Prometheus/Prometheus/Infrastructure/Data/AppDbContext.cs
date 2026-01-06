@@ -36,7 +36,6 @@ public class AppDbContext
             CREATE TABLE IF NOT EXISTS Users (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 DisplayName TEXT NOT NULL,
-                PersonalSymbol TEXT DEFAULT '',
                 AvatarPath TEXT DEFAULT '',
                 JournalFileName TEXT NOT NULL,
                 PixelaUsername TEXT,

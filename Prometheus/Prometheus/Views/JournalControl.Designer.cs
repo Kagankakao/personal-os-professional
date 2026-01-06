@@ -153,7 +153,7 @@ partial class JournalControl
 
         // lblFocusMetric
         this.lblFocusMetric.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F);
-        this.lblFocusMetric.Appearance.ForeColor = System.Drawing.Color.Cyan;
+        this.lblFocusMetric.Appearance.ForeColor = System.Drawing.Color.DarkGreen;
         this.lblFocusMetric.Appearance.Options.UseFont = true;
         this.lblFocusMetric.Appearance.Options.UseForeColor = true;
         this.lblFocusMetric.Location = new System.Drawing.Point(0, 15);

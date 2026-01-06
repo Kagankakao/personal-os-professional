@@ -54,6 +54,13 @@ public class JournalService : IJournalService
 
     public string GetJournalFilePath(User user)
     {
+        // If user provided an absolute path (custom file), use it directly
+        if (Path.IsPathRooted(user.JournalFileName))
+        {
+            _logger.Debug("Using absolute journal path: {Path}", user.JournalFileName);
+            return user.JournalFileName;
+        }
+
         // Path: dependencies/texts/Users/[DisplayName]/[JournalFileName]
         var path = Path.Combine(_kegomoDoroPath, "dependencies", "texts", "Users", user.DisplayName, user.JournalFileName);
         _logger.Debug("Journal file path for user {User}: {Path}", user.DisplayName, path);
@@ -130,6 +137,9 @@ public class JournalService : IJournalService
                         var timeStr = timeMatch.Groups[1].Value;
                         var note = timeMatch.Groups[2].Value.Trim();
                         
+                        // Strip [Manual Log] if present
+                        note = note.Replace("[Manual Log]", "").Trim();
+                        
                         // Parse time worked
                         if (TimeSpan.TryParse(timeStr.Split('.')[0], out var timeWorked))
                         {
@@ -142,7 +152,8 @@ public class JournalService : IJournalService
                     else
                     {
                         // It's additional note text
-                        currentEntry.NoteText += (string.IsNullOrEmpty(currentEntry.NoteText) ? "" : " ") + trimmedLine;
+                        var addedNote = trimmedLine.Replace("[Manual Log]", "").Trim();
+                        currentEntry.NoteText += (string.IsNullOrEmpty(currentEntry.NoteText) ? "" : " ") + addedNote;
                         currentEntry.RawText += "\n" + trimmedLine;
                     }
                 }
@@ -178,6 +189,9 @@ public class JournalService : IJournalService
             var hoursFromTimeCsv = await GetTodayHoursFromTimeCsvAsync(user);
             var finalTime = timeWorked ?? hoursFromTimeCsv;
             var timeStr = finalTime.ToString(@"hh\:mm\:ss");
+
+            // Strip prefix from note
+            note = note.Replace("[Manual Log]", "").Trim();
             
             _logger.Debug("Final time for entry: {Time} (from time.csv: {FromCsv})", 
                 timeStr, timeWorked == null ? "yes" : "no");
@@ -188,9 +202,11 @@ public class JournalService : IJournalService
             // Check if today's date already exists
             var lines = existingContent.Split('\n').ToList();
             var todayIndex = -1;
+            var alternates = new[] { dateStr, today.ToString("MM.dd.yyyy"), today.ToString("M/d/yyyy"), today.ToString("M.d.yyyy") };
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Trim().StartsWith(dateStr))
+                var lineTrim = lines[i].Trim();
+                if (alternates.Any(a => lineTrim.StartsWith(a)))
                 {
                     todayIndex = i;
                     break;
@@ -231,7 +247,7 @@ public class JournalService : IJournalService
                     }
                     
                     // Update the line with new time (always overwrite with latest) and merged note
-                    lines[todayIndex + 1] = $"{timeStr} {mergedNote}";
+                    lines[todayIndex + 1] = $"{timeStr} {mergedNote.Replace("[Manual Log]", "").Trim()}";
                 }
                 
                 // Write back
@@ -241,7 +257,8 @@ public class JournalService : IJournalService
             else
             {
                 // New date - append new entry
-                var entry = $"\n\n{dateStr}\n{timeStr} {note}";
+                var cleanNote = note.Replace("[Manual Log]", "").Trim();
+                var entry = $"\n\n{dateStr}\n{timeStr} {cleanNote}";
                 await File.AppendAllTextAsync(filePath, entry);
                 _logger.Information("New entry appended for {Date}", dateStr);
             }
@@ -371,6 +388,7 @@ public class JournalService : IJournalService
                 var hasNotesBelow = entryEndIndex > todayIndex + 2;  // If lines exist below time line
                 
                 // Append note
+                note = note.Replace("[Manual Log]", "").Trim();
                 if (!lines.Any(l => l.Contains(note)))  // Check if note already exists
                 {
                     // Only add inline if NO notes exist at all (neither inline nor below)
