@@ -117,6 +117,33 @@ namespace KeganOS.Views
             }
         }
 
+        private async void BtnSyncToAI_Click(object sender, EventArgs e)
+        {
+            if (_currentUser == null) return;
+
+            if (XtraMessageBox.Show("This will read your entire journal history from the text file and sync it to the AI's database. This may take a moment. Continue?", 
+                "Sync History to AI", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            try
+            {
+                Cursor.Current = Cursors.WaitCursor;
+                await _journalService.SyncAllFromFileToDatabaseAsync(_currentUser);
+                
+                XtraMessageBox.Show("Sync complete! Prometheus can now recall your entire journal history.", 
+                    "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to sync journal history");
+                XtraMessageBox.Show("Sync failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
+        }
+
         private void PnlHeader_Paint(object? sender, PaintEventArgs e)
         {
             var g = e.Graphics;

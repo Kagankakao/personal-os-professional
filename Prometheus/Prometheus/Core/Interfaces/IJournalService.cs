@@ -33,4 +33,9 @@ public interface IJournalService
     /// Open the journal file in Notepad
     /// </summary>
     void OpenInNotepad(User user);
+    
+    /// <summary>
+    /// Sync all entries from the local text file to the database to ensure AI sees history
+    /// </summary>
+    Task SyncAllFromFileToDatabaseAsync(User user);
 }

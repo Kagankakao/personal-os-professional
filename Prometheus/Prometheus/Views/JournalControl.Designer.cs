@@ -143,6 +143,7 @@ partial class JournalControl
         this.pnlEditFooter.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
         this.pnlEditFooter.Controls.Add(this.btnOpenNotepad);
         this.pnlEditFooter.Controls.Add(this.btnSave);
+        this.pnlEditFooter.Controls.Add(this.btnSyncToAI);
         this.pnlEditFooter.Dock = System.Windows.Forms.DockStyle.Bottom;
         this.pnlEditFooter.Location = new System.Drawing.Point(15, 310);
         this.pnlEditFooter.Name = "pnlEditFooter";
@@ -158,6 +159,17 @@ partial class JournalControl
         this.btnOpenNotepad.TabIndex = 3;
         this.btnOpenNotepad.Text = "Raw View";
         this.btnOpenNotepad.Click += new System.EventHandler(this.BtnOpenNotepad_Click);
+
+        // btnSyncToAI
+        this.btnSyncToAI = new DevExpress.XtraEditors.SimpleButton();
+        this.btnSyncToAI.Anchor = System.Windows.Forms.AnchorStyles.Left;
+        this.btnSyncToAI.Location = new System.Drawing.Point(10, 10);
+        this.btnSyncToAI.Name = "btnSyncToAI";
+        this.btnSyncToAI.Size = new System.Drawing.Size(100, 30);
+        this.btnSyncToAI.TabIndex = 4;
+        this.btnSyncToAI.Text = "Sync to AI";
+        this.btnSyncToAI.ToolTip = "Import all historical entries effectively into AI memory";
+        this.btnSyncToAI.Click += new System.EventHandler(this.BtnSyncToAI_Click);
         
         // btnSave
         this.btnSave.Anchor = System.Windows.Forms.AnchorStyles.Right;
@@ -206,4 +218,5 @@ partial class JournalControl
     private DevExpress.XtraEditors.PanelControl pnlEditFooter;
     private DevExpress.XtraEditors.SimpleButton btnSave;
     private DevExpress.XtraEditors.SimpleButton btnOpenNotepad;
+    private DevExpress.XtraEditors.SimpleButton btnSyncToAI;
 }

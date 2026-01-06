@@ -489,4 +489,69 @@ public class JournalService : IJournalService
             _logger.Error(ex, "Failed to open Notepad");
         }
     }
+
+    public async Task SyncAllFromFileToDatabaseAsync(User user)
+    {
+        _logger.Information("Starting full journal sync from file to database for user {User}", user.DisplayName);
+        try
+        {
+            // 1. Read all entries from file
+            var fileEntries = await ReadEntriesAsync(user);
+            int syncedCount = 0;
+
+            using var connection = _db.GetConnection();
+            
+            // Prepare statement to check if exists
+            var checkCmd = connection.CreateCommand();
+            checkCmd.CommandText = "SELECT COUNT(1) FROM JournalEntries WHERE UserId = @userId AND Date = @date";
+            checkCmd.Parameters.Add(checkCmd.CreateParameter()); // @userId (0)
+            checkCmd.Parameters.Add(checkCmd.CreateParameter()); // @date (1)
+
+            foreach (var entry in fileEntries)
+            {
+                // Verify if exists
+                checkCmd.Parameters[0].ParameterName = "@userId";
+                checkCmd.Parameters[0].Value = user.Id;
+                checkCmd.Parameters[1].ParameterName = "@date";
+                checkCmd.Parameters[1].Value = entry.Date.ToString("yyyy-MM-dd");
+
+                var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+                
+                if (count == 0)
+                {
+                    // Does not exist - Insert
+                    // Analyze mood first (can be slow, but necessary for data quality)
+                    var mood = await _prometheusService.AnalyzeMoodAsync(entry.NoteText);
+
+                    var insertCmd = connection.CreateCommand();
+                    insertCmd.CommandText = @"
+                        INSERT INTO JournalEntries (UserId, Date, TimeWorked, NoteText, RawText, MoodDetected)
+                        VALUES (@userId, @date, @time, @note, @raw, @mood)
+                    ";
+                    insertCmd.Parameters.AddWithValue("@userId", user.Id);
+                    insertCmd.Parameters.AddWithValue("@date", entry.Date.ToString("yyyy-MM-dd"));
+                    insertCmd.Parameters.AddWithValue("@time", entry.TimeWorked?.ToString(@"hh\:mm\:ss") ?? (object)DBNull.Value);
+                    insertCmd.Parameters.AddWithValue("@note", entry.NoteText);
+                    insertCmd.Parameters.AddWithValue("@raw", entry.RawText);
+                    insertCmd.Parameters.AddWithValue("@mood", mood);
+
+                    await insertCmd.ExecuteNonQueryAsync();
+                    syncedCount++;
+                }
+            }
+
+            _logger.Information("Sync complete. {Count} new entries synced to database", syncedCount);
+
+            if (syncedCount > 0)
+            {
+                // Trigger Prometheus index update
+                await _prometheusService.SyncDatabaseAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to sync all journal entries");
+            throw; // Let UI handle error display
+        }
+    }
 }
