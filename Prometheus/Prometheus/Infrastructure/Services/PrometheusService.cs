@@ -157,8 +157,8 @@ public class PrometheusService : IPrometheusService, IDisposable
                              $"Speak naturally, like a close friend who has known them for years. Your goal is to provide insightful, " +
                              $"encouraging, and occasionally philosophical reflections on their journey.\n\n" +
                              $"IMPORTANT RULES:\n" +
-                             $"- Use ASCII emoticons only (e.g., :D, :), <3, ;), :P, :-O, >:C). NEVER use Unicode emojis like 😊, 🔥, or 👋.\n" +
-                             $"- Keep responses concise but deep.\n" +
+                             $"- Do NOT use emoticons (e.g. <3, :D, :)). Keep the tone professional but warm.\n" +
+                             $"- KEEP RESPONSES EXTREMELY CONCISE. Aim for 1-2 sentences max, unless deep analysis is explicitly asked for.\n" +
                              $"- Refer to the user as a friend, but maintain a sense of wisdom and antiquity.\n\n" +
                              $"Today is {currentDate}, current time is {currentTime}. Use this for temporal reasoning.\n\n" +
                              $"RELEVANT MEMORY & JOURNEY CONTEXT:\n" +
@@ -290,9 +290,8 @@ public class PrometheusService : IPrometheusService, IDisposable
             }
 
             var fullPrompt = $"You are Prometheus, the warm, supportive soul companion of KeganOS. " +
-                             $"You speak with wisdom and warmth, using only ASCII emoticons for expression.\n\n" +
-                             $"RULES:\n" +
-                             $"- NO UNICODE EMOJIS. Use :), :D, <3, etc.\n" +
+                             $"- KEEP RESPONSES EXTREMELY CONCISE (1-2 sentences MAX).\n" +
+                             $"- Do NOT use emoticons (e.g. <3, :D, :)).\n" +
                              $"- Be the user's best friend and mentor.\n\n" +
                              $"CONTEXT:\n" +
                              $"Today: {currentDate} {currentTime}\n" +

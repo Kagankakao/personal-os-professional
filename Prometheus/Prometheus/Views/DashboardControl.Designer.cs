@@ -40,6 +40,7 @@ partial class DashboardControl
         this.lblPixelaColor = new DevExpress.XtraEditors.LabelControl();
         this.cboPixelaColor = new DevExpress.XtraEditors.ComboBoxEdit();
         // StepProgressBar removed due to assembly compatibility issues
+        // StepProgressBar removed due to assembly compatibility issues
         
         ((System.ComponentModel.ISupportInitialize)(this.pnlMotivation)).BeginInit();
         this.pnlMotivation.SuspendLayout();
@@ -113,6 +114,7 @@ partial class DashboardControl
         this.pnlTimer.Text = "KEGOMODORO";
         this.pnlTimer.Controls.Add(this.btnStart);
         this.pnlTimer.Controls.Add(this.lblTimerDisplay);
+        this.pnlTimer.Controls.Add(this.lblTimerDisplay);
         this.pnlTimer.Controls.Add(this.picTimerBrand);
         // Controls added
         // 
@@ -123,7 +125,7 @@ partial class DashboardControl
         this.lblTimerDisplay.Appearance.Options.UseTextOptions = true;
         this.lblTimerDisplay.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
         this.lblTimerDisplay.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-        this.lblTimerDisplay.Location = new System.Drawing.Point(50, 80);
+        this.lblTimerDisplay.Location = new System.Drawing.Point(50, 40);
         this.lblTimerDisplay.Name = "lblTimerDisplay";
         this.lblTimerDisplay.Size = new System.Drawing.Size(350, 120);
         this.lblTimerDisplay.TabIndex = 0;
@@ -153,12 +155,93 @@ partial class DashboardControl
         this.btnStart.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
         this.btnStart.Appearance.ForeColor = System.Drawing.Color.FromArgb(76, 175, 80);
         this.btnStart.Appearance.Options.UseFont = true;
+        // 
+        // btnStart
+        // 
+        this.btnStart.Appearance.Font = new System.Drawing.Font("Segoe UI", 11F);
+        this.btnStart.Appearance.ForeColor = System.Drawing.Color.FromArgb(76, 175, 80);
+        this.btnStart.Appearance.Options.UseFont = true;
         this.btnStart.Appearance.Options.UseForeColor = true;
-        this.btnStart.Location = new System.Drawing.Point(170, 340);
+        this.btnStart.Location = new System.Drawing.Point(170, 200); // Moved Up
         this.btnStart.Name = "btnStart";
         this.btnStart.Size = new System.Drawing.Size(110, 35);
         this.btnStart.TabIndex = 1;
         this.btnStart.Text = "[ ▶ Start ]";
+        
+        // 
+        // grpTasks
+        // 
+        // pageDaily - instantiated first
+        this.pageDaily = new DevExpress.XtraTab.XtraTabPage();
+        this.pageDaily.Text = "Daily";
+        this.lstDaily = new DevExpress.XtraEditors.CheckedListBoxControl();
+        this.lstDaily.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lstDaily.SelectionMode = System.Windows.Forms.SelectionMode.One;
+        this.pageDaily.Controls.Add(this.lstDaily);
+
+        // pageLongTerm
+        this.pageLongTerm = new DevExpress.XtraTab.XtraTabPage();
+        this.pageLongTerm.Text = "Long Term";
+        this.lstLongTerm = new DevExpress.XtraEditors.CheckedListBoxControl();
+        this.lstLongTerm.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.pageLongTerm.Controls.Add(this.lstLongTerm);
+
+        // pageDone
+        this.pageDone = new DevExpress.XtraTab.XtraTabPage();
+        this.pageDone.Text = "Done";
+        this.lstDone = new DevExpress.XtraEditors.CheckedListBoxControl();
+        this.lstDone.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.pageDone.Controls.Add(this.lstDone);
+
+        // tabTasks - now added
+        this.tabTasks = new DevExpress.XtraTab.XtraTabControl();
+        this.tabTasks.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tabTasks.TabPages.Add(this.pageDaily);
+        this.tabTasks.TabPages.Add(this.pageLongTerm);
+        this.tabTasks.TabPages.Add(this.pageDone);
+
+        // btnDeleteTask
+        this.btnDeleteTask = new DevExpress.XtraEditors.SimpleButton();
+        this.btnDeleteTask.Text = "X";
+        this.btnDeleteTask.Dock = System.Windows.Forms.DockStyle.Right;
+        this.btnDeleteTask.Width = 30;
+        this.btnDeleteTask.ToolTip = "Delete Selected";
+
+        // btnAddTask
+        this.btnAddTask = new DevExpress.XtraEditors.SimpleButton();
+        this.btnAddTask.Text = "+";
+        this.btnAddTask.Dock = System.Windows.Forms.DockStyle.Right;
+        this.btnAddTask.Width = 30;
+        this.btnAddTask.ToolTip = "Add Task";
+
+        // txtNewTask (Action Panel version)
+        this.txtNewTask = new DevExpress.XtraEditors.TextEdit();
+        this.txtNewTask.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.txtNewTask.Properties.NullText = "+ Add Task";
+        this.txtNewTask.Properties.Appearance.BackColor = System.Drawing.Color.WhiteSmoke;
+        this.txtNewTask.Properties.Appearance.Options.UseBackColor = true;
+
+        // pnlTaskActions
+        this.pnlTaskActions = new DevExpress.XtraEditors.PanelControl();
+        this.pnlTaskActions.Dock = System.Windows.Forms.DockStyle.Bottom;
+        this.pnlTaskActions.Height = 30;
+        this.pnlTaskActions.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+        this.pnlTaskActions.Controls.Add(this.txtNewTask);
+        this.pnlTaskActions.Controls.Add(this.btnAddTask);
+        this.pnlTaskActions.Controls.Add(this.btnDeleteTask);
+        
+        // grpTasks
+        this.grpTasks = new DevExpress.XtraEditors.GroupControl();
+        this.grpTasks.Text = "Short Task Manager";
+        this.grpTasks.Location = new System.Drawing.Point(25, 260); 
+        this.grpTasks.Size = new System.Drawing.Size(400, 230); 
+        this.grpTasks.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+        this.grpTasks.Controls.Add(this.tabTasks); // Tab control is ready
+        this.grpTasks.Controls.Add(this.pnlTaskActions); // Actions Panel is ready
+        this.pnlTimer.Controls.Add(this.grpTasks);
+        
+        // Flush button will be added to Daily tab header dynamically or context menu
         // 
         // pnlStats - Your Stats
         // 
@@ -337,6 +420,7 @@ partial class DashboardControl
         ((System.ComponentModel.ISupportInitialize)(this.picPixelaHeatmap.Properties)).EndInit();
         ((System.ComponentModel.ISupportInitialize)(this.picTimerBrand.Properties)).EndInit();
         ((System.ComponentModel.ISupportInitialize)(this.progressXP.Properties)).EndInit();
+        ((System.ComponentModel.ISupportInitialize)(this.progressXP.Properties)).EndInit();
         this.ResumeLayout(false);
     }
 
@@ -365,4 +449,18 @@ partial class DashboardControl
     // stepDailyProgress field removed
     private DevExpress.XtraEditors.LabelControl lblPixelaColor;
     private DevExpress.XtraEditors.ComboBoxEdit cboPixelaColor;
+    // Task Manager Controls
+    private DevExpress.XtraEditors.GroupControl grpTasks;
+    private DevExpress.XtraTab.XtraTabControl tabTasks;
+    private DevExpress.XtraTab.XtraTabPage pageDaily;
+    private DevExpress.XtraTab.XtraTabPage pageLongTerm;
+    private DevExpress.XtraTab.XtraTabPage pageDone;
+    private DevExpress.XtraEditors.CheckedListBoxControl lstDaily;
+    private DevExpress.XtraEditors.CheckedListBoxControl lstLongTerm;
+    private DevExpress.XtraEditors.CheckedListBoxControl lstDone;
+    private DevExpress.XtraEditors.TextEdit txtNewTask;
+    private DevExpress.XtraEditors.SimpleButton btnAddTask;
+    private DevExpress.XtraEditors.SimpleButton btnDeleteTask;
+    private DevExpress.XtraEditors.PanelControl pnlTaskActions;
+    private DevExpress.XtraEditors.SimpleButton btnFlush;
 }

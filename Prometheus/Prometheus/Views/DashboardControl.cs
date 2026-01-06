@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using DevExpress.XtraEditors.Controls;
+
 namespace KeganOS.Views
 {
     public partial class DashboardControl : XtraUserControl
@@ -30,6 +34,9 @@ namespace KeganOS.Views
         private int _glowIntensity = 0;
         private bool _glowIncreasing = true;
         private bool _isLoading = true;
+
+        private List<TaskItem> _tasks = new();
+        private string _tasksFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tasks.json");
 
         public DashboardControl(IUserService userService, IMotivationalMessageService motivationService, 
             IPixelaService pixelaService, IAnalyticsService analyticsService, 
@@ -93,7 +100,21 @@ namespace KeganOS.Views
                     Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
                 }
             };
-
+            
+            // Task Manager Events
+            txtNewTask.KeyDown += (s, e) => {
+                if (e.KeyCode == Keys.Enter) {
+                    AddNewTask();
+                    e.SuppressKeyPress = true;
+                    e.Handled = true;
+                }
+            };
+            
+            lstDaily.ItemCheck += LstTasks_ItemCheck;
+            lstLongTerm.ItemCheck += LstTasks_ItemCheck;
+            
+            btnAddTask.Click += (s, e) => AddNewTask();
+            btnDeleteTask.Click += BtnDeleteTask_Click;
         }
 
         private void InitGlowTimer()
@@ -120,7 +141,10 @@ namespace KeganOS.Views
                 await RefreshStatsAsync();
                 await RefreshMotivationAsync();
                 await RefreshPixelaHeatmapAsync();
+                await RefreshMotivationAsync();
+                await RefreshPixelaHeatmapAsync();
                 await StartJourneyStreamingAsync();
+                LoadTasks();
             } finally {
                 _isLoading = false;
             }
@@ -281,6 +305,12 @@ namespace KeganOS.Views
             if (user == null) return;
             lblLevelText.Text = $"Level {user.Level} • {user.XP % 100}/100 XP";
             progressXP.Position = (int)(user.XP % 100);
+            
+            // Update newly added Level Bar - REMOVED for Task Manager
+            // if (progressLevel != null)
+            // {
+            //      progressLevel.Position = (int)(user.XP % 100);
+            // }
             var streak = await _analyticsService.CalculateCurrentStreakAsync(user);
             var weekly = await _analyticsService.GetWeeklyDataAsync(user, DateTime.Today);
             UpdateTile(tileItemToday, "TODAY", $"{weekly.GetValueOrDefault(DateTime.Today.DayOfWeek):F1}", "HRS");
@@ -321,6 +351,116 @@ namespace KeganOS.Views
             var user = await _userService.GetCurrentUserAsync();
             var msg = await _motivationService.GetMessageAsync(user);
             if (msg != null) lblMotivation.Text = msg.Message;
+        }
+        private void LoadTasks()
+        {
+            try
+            {
+                if (File.Exists(_tasksFilePath))
+                {
+                    var json = File.ReadAllText(_tasksFilePath);
+                    _tasks = JsonConvert.DeserializeObject<List<TaskItem>>(json) ?? new List<TaskItem>();
+                }
+                RefreshTaskLists();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to load tasks");
+            }
+        }
+
+        private void SaveTasks()
+        {
+            try
+            {
+                var json = JsonConvert.SerializeObject(_tasks, Formatting.Indented);
+                File.WriteAllText(_tasksFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to save tasks");
+            }
+        }
+
+        private void RefreshTaskLists()
+        {
+            lstDaily.DataSource = _tasks.Where(t => t.Type == TaskType.Daily && !t.IsCompleted).ToList();
+            lstDaily.DisplayMember = "Text";
+            lstDaily.ValueMember = "Id";
+
+            lstLongTerm.DataSource = _tasks.Where(t => t.Type == TaskType.LongTerm && !t.IsCompleted).ToList();
+            lstLongTerm.DisplayMember = "Text";
+            lstLongTerm.ValueMember = "Id";
+
+            lstDone.DataSource = _tasks.Where(t => t.IsCompleted).OrderByDescending(t => t.CreatedAt).Take(20).ToList();
+            lstDone.DisplayMember = "Text";
+            lstDone.ValueMember = "Id";
+            
+            // Check all items in Done list visually (optional, CheckedListBox doesn't auto-check based on property unless bound)
+            for (int i = 0; i < lstDone.ItemCount; i++) lstDone.SetItemChecked(i, true);
+        }
+
+        private void AddNewTask()
+        {
+            var text = txtNewTask.Text.Trim();
+            if (string.IsNullOrEmpty(text)) return;
+
+            var type = TaskType.Daily;
+            if (tabTasks.SelectedTabPage == pageLongTerm) type = TaskType.LongTerm;
+
+            var task = new TaskItem { Text = text, Type = type, CreatedAt = DateTime.Now };
+            _tasks.Add(task);
+            SaveTasks();
+            RefreshTaskLists();
+            txtNewTask.Text = "";
+        }
+
+        private void LstTasks_ItemCheck(object sender, DevExpress.XtraEditors.Controls.ItemCheckEventArgs e)
+        {
+            // Avoid recursion or initial load triggers
+            if (sender is CheckedListBoxControl list)
+            {
+                var task = list.GetItem(e.Index) as TaskItem;
+                if (task != null)
+                {
+                    bool isChecked = e.State == CheckState.Checked;
+                    
+                    // If in Done list, unchecking means reopening
+                    if (list == lstDone && !isChecked)
+                    {
+                        task.IsCompleted = false;
+                        task.CreatedAt = DateTime.Now; // move to top of active list
+                    }
+                    // If in Active list, checking means completion
+                    else if (list != lstDone && isChecked)
+                    {
+                        task.IsCompleted = true;
+                    }
+                    
+                    // Delay refresh to allow animation/UI update
+                    BeginInvoke(new Action(() => {
+                        SaveTasks();
+                        RefreshTaskLists();
+                    }));
+                }
+            }
+        }
+        
+        private void BtnDeleteTask_Click(object sender, EventArgs e)
+        {
+            var activeList = tabTasks.SelectedTabPage == pageDaily ? lstDaily :
+                             tabTasks.SelectedTabPage == pageLongTerm ? lstLongTerm : lstDone;
+            
+            if (activeList.SelectedIndex >= 0)
+            {
+                var task = activeList.SelectedItem as TaskItem;
+                if (task != null)
+                {
+                    _tasks.Remove(task);
+                    SaveTasks();
+                    RefreshTaskLists();
+                }
+            }
         }
     }
 }

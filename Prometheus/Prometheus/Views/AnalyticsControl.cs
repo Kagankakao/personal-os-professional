@@ -13,6 +13,10 @@ using KeganOS.Core.Interfaces;
 using KeganOS.Core.Models;
 using Serilog;
 using DevExpress.XtraCharts;
+using DevExpress.XtraRichEdit;
+using DevExpress.XtraRichEdit;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace KeganOS.Views
 {
@@ -46,21 +50,34 @@ namespace KeganOS.Views
                 btnConsultAI.Enabled = false;
                 btnConsultAI.Text = "Generating...";
 
-                var report = await _analyticsService.GenerateInsightAsync(user, DateTime.Today, "WeeklyReport");
+                // Calculate start of current week (Monday)
+                var today = DateTime.Today;
+                var currentWeekStart = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
+                
+                var report = await _analyticsService.GenerateInsightAsync(user, currentWeekStart, "WeeklyReport");
                 
                 // Show in a nice dialog
                 using var dlg = new XtraForm();
                 dlg.Text = "Prometheus Weekly Report";
-                dlg.Size = new Size(500, 600);
+                dlg.Size = new Size(600, 750);
                 dlg.StartPosition = FormStartPosition.CenterParent;
+
+                var richEdit = new RichEditControl();
+                richEdit.Dock = DockStyle.Fill;
+                richEdit.ReadOnly = true;
+                richEdit.ActiveViewType = RichEditViewType.Simple;
+                richEdit.Options.HorizontalRuler.Visibility = RichEditRulerVisibility.Hidden;
+                richEdit.Options.VerticalRuler.Visibility = RichEditRulerVisibility.Hidden;
                 
-                var memo = new MemoEdit();
-                memo.Dock = DockStyle.Fill;
-                memo.Properties.ReadOnly = true;
-                memo.Text = report;
-                memo.Properties.Appearance.Font = new Font("Segoe UI", 10);
+                // Convert simple Markdown to HTML for robust rendering
+                var htmlContent = ConvertMarkdownToHtml(report);
+                var bytes = Encoding.UTF8.GetBytes(htmlContent);
+                using (var ms = new MemoryStream(bytes))
+                {
+                    richEdit.LoadDocument(ms, DocumentFormat.Html);
+                }
                 
-                dlg.Controls.Add(memo);
+                dlg.Controls.Add(richEdit);
                 dlg.ShowDialog();
             }
             catch (Exception ex)
@@ -83,6 +100,68 @@ namespace KeganOS.Views
             base.OnLoad(e);
             if (DesignMode) return;
             await LoadDataAsync();
+        }
+
+        private string ConvertMarkdownToHtml(string markdown)
+        {
+            if (string.IsNullOrEmpty(markdown)) return "";
+
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family:Segoe UI; font-size:11pt; color:black;'>");
+
+            // Split into lines
+            var lines = markdown.Replace("\r\n", "\n").Split('\n');
+            bool inList = false;
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+
+                if (string.IsNullOrWhiteSpace(trimmed))
+                {
+                    if (inList) { sb.Append("</ul>"); inList = false; }
+                    sb.Append("<br/>");
+                    continue;
+                }
+
+                // Headers (## or ###)
+                if (trimmed.StartsWith("##"))
+                {
+                    if (inList) { sb.Append("</ul>"); inList = false; }
+                    var headerHtml = ProcessInlineFormatting(trimmed.TrimStart('#').Trim());
+                    sb.Append($"<h3>{headerHtml}</h3>");
+                    continue;
+                }
+
+                // Bullet points (* or -)
+                if (trimmed.StartsWith("* ") || trimmed.StartsWith("- "))
+                {
+                    if (!inList) { sb.Append("<ul>"); inList = true; }
+                    var listContent = ProcessInlineFormatting(trimmed.Substring(2));
+                    sb.Append($"<li>{listContent}</li>");
+                    continue;
+                }
+
+                // Close list if we hit a non-list items
+                if (inList) { sb.Append("</ul>"); inList = false; }
+
+                // Regular Paragraph
+                var pContent = ProcessInlineFormatting(trimmed);
+                sb.Append($"<p>{pContent}</p>");
+            }
+
+            if (inList) sb.Append("</ul>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private string ProcessInlineFormatting(string text)
+        {
+            // Bold (**text**)
+            text = Regex.Replace(text, @"\*\*(.*?)\*\*", "<b>$1</b>");
+            // Italic (*text*)
+            text = Regex.Replace(text, @"\*(.*?)\*", "<i>$1</i>");
+            return text;
         }
 
         private async Task LoadDataAsync()

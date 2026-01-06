@@ -83,14 +83,14 @@ partial class SettingsControl
         
         // lblTitle
         this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI Semilight", 22F);
-        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.FromArgb(0, 200, 100);
+        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.Black;
         this.lblTitle.Appearance.Options.UseFont = true;
         this.lblTitle.Appearance.Options.UseForeColor = true;
         this.lblTitle.Location = new System.Drawing.Point(0, 5);
         this.lblTitle.Name = "lblTitle";
         this.lblTitle.Size = new System.Drawing.Size(280, 40);
         this.lblTitle.TabIndex = 0;
-        this.lblTitle.Text = "Sovereign Configuration";
+        this.lblTitle.Text = "Settings";
         
         // scrollContainer
         this.scrollContainer.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -111,8 +111,6 @@ partial class SettingsControl
         this.groupKegomoDoro.Controls.Add(this.spinShortBreak);
         this.groupKegomoDoro.Controls.Add(this.lblLongBreak);
         this.groupKegomoDoro.Controls.Add(this.spinLongBreak);
-        this.groupKegomoDoro.Controls.Add(this.lblBackColor);
-        this.groupKegomoDoro.Controls.Add(this.colorPickBack);
         
         // lblWorkMin
         this.lblWorkMin.Location = new System.Drawing.Point(20, 35);
@@ -153,16 +151,6 @@ partial class SettingsControl
         this.spinLongBreak.Properties.MaxValue = 60;
         this.spinLongBreak.Properties.MinValue = 1;
         
-        // lblBackColor
-        this.lblBackColor.Location = new System.Drawing.Point(20, 125);
-        this.lblBackColor.Name = "lblBackColor";
-        this.lblBackColor.Text = "Background Color:";
-        
-        // colorPickBack
-        this.colorPickBack.EditValue = System.Drawing.Color.Maroon;
-        this.colorPickBack.Location = new System.Drawing.Point(160, 122);
-        this.colorPickBack.Name = "colorPickBack";
-        this.colorPickBack.Size = new System.Drawing.Size(100, 22);
         
         // === API KEYS GROUP ===
         this.groupApiKeys.Location = new System.Drawing.Point(0, 170);
@@ -223,7 +211,7 @@ partial class SettingsControl
         this.groupBackup.TabIndex = 2;
         this.groupBackup.Text = "Backup & Restore";
         this.groupBackup.Controls.Add(this.btnCreateBackup);
-        this.groupBackup.Controls.Add(this.btnRestoreBackup);
+        this.groupBackup.Controls.Add(this.btnCreateBackup);
         this.groupBackup.Controls.Add(this.btnOpenBackupFolder);
         this.groupBackup.Controls.Add(this.lblLastBackup);
         
@@ -233,11 +221,6 @@ partial class SettingsControl
         this.btnCreateBackup.Size = new System.Drawing.Size(100, 30);
         this.btnCreateBackup.Text = "Create";
         
-        // btnRestoreBackup
-        this.btnRestoreBackup.Location = new System.Drawing.Point(130, 35);
-        this.btnRestoreBackup.Name = "btnRestoreBackup";
-        this.btnRestoreBackup.Size = new System.Drawing.Size(100, 30);
-        this.btnRestoreBackup.Text = "Restore";
         
         // btnOpenBackupFolder
         this.btnOpenBackupFolder.Location = new System.Drawing.Point(240, 35);

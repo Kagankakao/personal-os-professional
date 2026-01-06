@@ -55,7 +55,7 @@ partial class AchievementsControl
         this.lblTitle.Padding = new System.Windows.Forms.Padding(10, 5, 0, 15);
         this.lblTitle.Size = new System.Drawing.Size(250, 60);
         this.lblTitle.TabIndex = 1;
-        this.lblTitle.Text = "Hall of Fame";
+        this.lblTitle.Text = "Professional Milestones";
         this.lblTitle.BackColor = System.Drawing.Color.Transparent;
         // 
         // AchievementsControl

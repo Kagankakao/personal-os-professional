@@ -114,9 +114,9 @@ public class JournalService : IJournalService
                         entries.Add(currentEntry);
                     }
 
-                    // Parse date
+                    // Parse date (Force InvariantCulture as we write in MM/dd/yyyy)
                     var dateStr = dateMatch.Groups[1].Value;
-                    if (DateTime.TryParse(dateStr, out var date))
+                    if (DateTime.TryParse(dateStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                     {
                         currentEntry = new JournalEntry
                         {

@@ -51,7 +51,7 @@ partial class AnalyticsControl
         this.chartWeeklyProgress.TabIndex = 0;
         // lblTitle
         this.lblTitle.Appearance.Font = new System.Drawing.Font("Segoe UI Semilight", 22F);
-        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.FromArgb(255, 200, 0);
+        this.lblTitle.Appearance.ForeColor = System.Drawing.Color.Black;
         this.lblTitle.Appearance.Options.UseFont = true;
         this.lblTitle.Appearance.Options.UseForeColor = true;
 

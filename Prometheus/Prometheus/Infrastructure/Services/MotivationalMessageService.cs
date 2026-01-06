@@ -40,42 +40,38 @@ public class MotivationalMessageService : IMotivationalMessageService
 
         try
         {
-            // First, check for milestones ("this day X years ago")
+            // Collect all messages for the ticker
+            var allQuotes = new List<string>();
+
+            // 1. Check for milestones ("this day X years ago")
             var milestones = await GetMilestonesForTodayAsync(user);
             if (milestones.Any())
             {
                 var milestone = milestones.First();
                 var yearsAgo = DateTime.Today.Year - milestone.Date.Year;
-                var previewText = milestone.NoteText.Length > 50 ? milestone.NoteText[..50] + "..." : milestone.NoteText;
-                
-                return new MotivationalMessage
-                {
-                    Type = MotivationalMessageType.Milestone,
-                    Message = $"{yearsAgo} year{(yearsAgo > 1 ? "s" : "")} ago today: \"{previewText}\"",
-                    SourceQuote = milestone.NoteText,
-                    SourceDate = milestone.Date
-                };
+                var previewText = milestone.NoteText.Length > 100 ? milestone.NoteText[..100] + "..." : milestone.NoteText;
+                allQuotes.Add($"{yearsAgo} year{(yearsAgo > 1 ? "s" : "")} ago today: \"{previewText}\"");
             }
-
             // Get random quotes for the ticker
             var entries = await _journalService.ReadEntriesAsync(user);
             if (entries.Any())
             {
                 var quotes = await ExtractQuotesAsync(entries);
-                if (quotes.Any())
+                allQuotes.AddRange(quotes);
+            }
+
+            if (allQuotes.Any())
+            {
+                // separator for news ticker
+                string separator = "   ///   ";
+                string combinedQuotes = string.Join(separator, allQuotes); 
+                
+                return new MotivationalMessage
                 {
-                    // separator for news ticker
-                    // separator for news ticker
-                    string separator = "   ///   ";
-                    string combinedQuotes = string.Join(separator, quotes); 
-                    
-                    return new MotivationalMessage
-                    {
-                        Type = MotivationalMessageType.OwnQuote,
-                        Message = combinedQuotes + separator,
-                        SourceDate = DateTime.Today
-                    };
-                }
+                    Type = MotivationalMessageType.OwnQuote,
+                    Message = combinedQuotes + separator,
+                    SourceDate = DateTime.Today
+                };
             }
 
             // Fallback to generic motivational quote
